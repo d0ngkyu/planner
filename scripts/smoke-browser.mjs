@@ -20,7 +20,7 @@ await new Promise(r => server.listen(0, '127.0.0.1', r));
 const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_PATH });
 await mkdir('.tools/screenshots', { recursive: true });
 try {
-  for (const nativeMode of [false, true]) for (const width of [390, 1360]) {
+  for (const nativeMode of [false, true]) for (const width of [360, 390, 768, 1360]) {
     const context = await browser.newContext({ viewport: { width, height: 844 }, serviceWorkers: 'block' });
     const page = await context.newPage();
     const errors = [];
@@ -39,7 +39,19 @@ try {
     await page.waitForTimeout(300);
     await page.reload();
     await page.getByText('앱 보존 검사', { exact: true }).waitFor();
-    for (const view of ['week', 'month', 'stats', 'day']) await page.locator(`#views [data-view=${view}]`).click();
+    await page.locator('#dockInput').fill('14:00 빠른 입력 검사');
+    await page.locator('.dock-submit').click();
+    await page.getByText('빠른 입력 검사', { exact: true }).waitFor();
+    for (const view of ['week', 'month', 'stats', 'day']) {
+      await page.locator(`#views [data-view=${view}]`).click();
+      await page.waitForTimeout(400);
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `Page overflow ${width}/${view}`);
+      const small = await page.locator('button:visible').evaluateAll(buttons => buttons.filter(b => {
+        const r = b.getBoundingClientRect(); return r.width < 43.5 || r.height < 43.5;
+      }).map(b => ({ label: b.getAttribute('aria-label') || b.textContent, cls: b.className, width: b.getBoundingClientRect().width, height: b.getBoundingClientRect().height })));
+      assert.deepEqual(small, [], `Touch targets ${width}/${view}`);
+    }
+    await page.screenshot({ path: `.tools/screenshots/calm-${nativeMode ? 'native' : 'web'}-${width}-light.png` });
     await page.locator('#settingsBtn').click();
     if (nativeMode) {
       await page.locator('#exportBtn').click();
@@ -48,6 +60,14 @@ try {
       assert.match(await page.locator('#syncText').textContent(), /휴대폰에 저장/);
     }
     await page.screenshot({ path: `.tools/screenshots/${nativeMode ? 'native-adapter' : 'web'}-${width}.png` });
+    await page.locator('#themeSeg [data-theme=dark]').click();
+    await page.locator('#settingsDlg [data-close]').click();
+    await page.waitForTimeout(350);
+    assert.equal(await page.evaluate(() => getComputedStyle(document.body).backgroundColor), 'rgb(20, 21, 23)');
+    await page.screenshot({ path: `.tools/screenshots/calm-${nativeMode ? 'native' : 'web'}-${width}-dark.png` });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    const animation = await page.locator('.dock-submit').evaluate(b => getComputedStyle(b).transitionDuration);
+    assert.ok(animation.split(',').every(s => parseFloat(s) < .001));
     assert.deepEqual(errors, []);
     console.log(`${nativeMode ? 'Native adapter mock' : 'Web'} ${width}px: create/reload/views/settings passed; JS errors 0`);
     await context.close();

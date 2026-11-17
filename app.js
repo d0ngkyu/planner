@@ -8,7 +8,7 @@ import { native } from './platform.js';
 
 const KEY = 'planner.records.v1';
 const UIKEY = 'planner.ui.v1';
-const COLORS = ['#2f6f5e', '#3b6fd8', '#d0544b', '#d99a2b', '#8a5cc7', '#6b7280'];
+const COLORS = ['#3b6e5c', '#3b6fd8', '#d0544b', '#d99a2b', '#8a5cc7', '#6b7280'];
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s = '') => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -210,6 +210,7 @@ function render() {
   const a = document.activeElement, focusId = a && a.id, sel = a && 'selectionStart' in a ? [a.selectionStart, a.selectionEnd] : null;
   const typing = a && a.dataset && a.dataset.note ? a.value : null;
   $('#label').innerHTML = labelText();
+  $('#dockDate').textContent = `${ui.date === S.today() ? '오늘' : fmtMD(ui.date)}에 추가`;
   document.querySelectorAll('#views button').forEach((b) => b.setAttribute('aria-selected', b.dataset.view === ui.view));
   const m = $('#main');
   m.innerHTML = ui.view === 'day' ? dayView() : ui.view === 'week' ? weekView() : ui.view === 'stats' ? statsView() : monthView();
@@ -232,8 +233,9 @@ function renderSync() {
   $('#syncText').textContent = sync.enabled ? (s.email ? `${s.email} · ${txt}` : txt) : '동기화가 아직 설정되지 않아 이 기기에만 저장됩니다. README의 "동기화 켜기"를 따라 Firebase 설정을 넣으면 폰·PC가 같은 데이터를 씁니다.';
   if (native) $('#syncText').textContent = '현재 이 휴대폰에 저장됩니다. 폰·PC 동기화는 추후 연결합니다. 기존 웹 데이터는 JSON 백업 파일로 가져올 수 있어요.';
   const btn = $('#authBtn');
-  btn.hidden = !sync.enabled;
-  btn.textContent = s.email ? '로그아웃' : 'Google로 로그인';
+  btn.hidden = false; btn.disabled = !sync.enabled;
+  btn.textContent = !sync.enabled ? '동기화 준비 중' : s.email ? '로그아웃' : 'Google로 로그인';
+  $('#syncBadge').textContent = !sync.enabled ? '미연결' : s.email ? '연결됨' : '로그인 필요';
 }
 
 // ---------- 편집 시트 ----------
@@ -310,6 +312,17 @@ $('#prev').onclick = () => go(-1); $('#next').onclick = () => go(1);
 $('#todayBtn').onclick = () => { navAnim = 'fade'; barPrev = null; ui.date = S.today(); render(); };
 $('#views').onclick = (e) => { const b = e.target.closest('button'); if (b) setView(b.dataset.view); };
 $('#fab').onclick = () => openEdit(null);
+function addQuickItem(value, date) {
+  const q = parseQuick(value);
+  addedId = put({ id: S.uid(), kind: 'item', ...q, date, repeat: 'none', color: q.type === 'event' ? COLORS[1] : COLORS[0], note: '', done: false, doneDates: [], order: S.itemsOn(records, date).length, remind: q.time ? 0 : -1 }).id;
+}
+$('#quickDock').onsubmit = (e) => {
+  e.preventDefault();
+  const input = $('#dockInput'), value = input.value.trim();
+  if (!value) { input.focus(); return; }
+  addQuickItem(value, ui.date); input.value = ''; ui.view = 'day'; saveUI(); render();
+  toast(`${fmtMD(ui.date)}에 추가했어요`);
+};
 
 const main = $('#main');
 main.addEventListener('click', (e) => {
@@ -365,9 +378,7 @@ main.addEventListener('submit', (e) => {
   const input = f.querySelector('input'), v = input.value.trim();
   if (!v) return;
   if (f.dataset.add) {
-    const q = parseQuick(v);
-    const n = S.itemsOn(records, f.dataset.add).length;
-    addedId = put({ id: S.uid(), kind: 'item', ...q, date: f.dataset.add, repeat: 'none', color: q.type === 'event' ? COLORS[1] : COLORS[0], note: '', done: false, doneDates: [], order: n, remind: q.time ? 0 : -1 }).id;
+    addQuickItem(v, f.dataset.add);
   } else if (f.dataset.goalAdd) {
     addedId = put({ id: S.uid(), kind: 'goal', scope: f.dataset.goalAdd, text: v, done: false, order: S.goalsOf(records, f.dataset.goalAdd).length }).id;
   }
@@ -407,6 +418,8 @@ $('#settingsBtn').onclick = () => { renderSync(); renderPush(); syncTheme(); $('
 $('#authBtn').onclick = async () => { try { syncState.email ? await sync.signOut() : await sync.signIn(); } catch (e) { toast('로그인 실패: ' + (e.code || e.message)); } };
 function renderPush() {
   if (native) {
+    $('#pushBadge').textContent = native.granted ? '휴대폰 예약' : '권한 필요';
+    $('#nagStatus').hidden = false;
     const st = native.settings;
     $('#pushText').textContent = native.granted
       ? '휴대폰 알림 사용 중 · 앞으로 30일/최대 400건을 예약하고 앱을 열면 갱신해요. 절전 상태에서는 늦을 수 있어요.'
@@ -420,6 +433,8 @@ function renderPush() {
     return;
   }
   const ok = sync.pushSupported(), on = !!localStorage.getItem('planner.pushDevice') && typeof Notification !== 'undefined' && Notification.permission === 'granted';
+  $('#pushBadge').textContent = !ok ? '미연결' : on ? '연결됨' : '설정 필요';
+  $('#nagStatus').hidden = ok;
   const st = pushSettings || {};
   $('#pushText').textContent = !sync.enabled || !ok ? '알림은 동기화(Firebase) 설정과 웹 푸시 키를 넣은 뒤 쓸 수 있어요 (README "알림 켜기").'
     : !syncState.email ? 'Google로 로그인하면 알림을 켤 수 있어요.'

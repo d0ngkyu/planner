@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#f6f4ef" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#16181b" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#FAF9F6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141517" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="플래너">
 <title>플래너</title>
@@ -41,7 +41,11 @@
   </header>
   <button class="focus-pill" id="focusPill" hidden></button>
   <main id="main"></main>
-  <button class="fab" id="fab" aria-label="새 항목">＋</button>
+  <form class="quick-dock" id="quickDock">
+    <button type="button" id="fab" class="dock-detail" aria-label="새 항목 상세 입력">＋</button>
+    <div class="dock-field"><label for="dockInput" id="dockDate">오늘 할 일</label><input id="dockInput" placeholder="할 일 추가 · 14:00 회의" autocomplete="off" enterkeyhint="done" maxlength="500"></div>
+    <button type="submit" class="dock-submit" aria-label="빠른 입력 추가">↑</button>
+  </form>
 </div>
 
 <dialog id="editDlg" class="sheet">
@@ -95,12 +99,12 @@
 <dialog id="settingsDlg" class="sheet">
   <div class="sheet-head"><h2>설정</h2><button type="button" class="icon" data-close>✕</button></div>
   <section class="set">
-    <h3>기기 간 동기화</h3>
+    <h3>기기 간 동기화 <span class="status-badge" id="syncBadge">미연결</span></h3>
     <p id="syncText" class="muted"></p>
     <button id="authBtn" class="primary"></button>
   </section>
   <section class="set" id="pushSet">
-    <h3>알림</h3>
+    <h3>알림 <span class="status-badge" id="pushBadge">확인 중</span></h3>
     <p id="pushText" class="muted small"></p>
     <div class="row-btns"><button id="pushBtn" class="primary">이 기기에서 알림 켜기</button><button id="pingBtn">테스트 알림</button></div>
     <div class="row2 checkin">
@@ -108,6 +112,7 @@
       <label>밤 체크 알림<input type="time" id="eveningAt"></label>
     </div>
     <label class="toggle"><input type="checkbox" id="nagOn"> 밤에 남은 할 일이 있으면 30분 간격으로 2번 더 알림</label>
+    <p class="muted small" id="nagStatus" hidden>조건부 밤 재알림은 아직 연결되지 않았어요.</p>
     <p class="muted small">일정 알림은 항목마다 시간과 "알림"을 정하면 와요. 앱을 꺼 둬도 옵니다.</p>
   </section>
   <section class="set">
