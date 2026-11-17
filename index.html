@@ -53,14 +53,20 @@
       <label>시간<input type="time" name="time"></label>
     </div>
     <div class="row2">
+      <label class="remind">알림
+        <select name="remind">
+          <option value="-1">없음</option><option value="0">정시</option><option value="5">5분 전</option>
+          <option value="10">10분 전</option><option value="30">30분 전</option><option value="60">1시간 전</option>
+        </select>
+      </label>
       <label>반복
         <select name="repeat">
           <option value="none">안 함</option><option value="daily">매일</option><option value="weekdays">평일</option>
           <option value="weekly">매주</option><option value="monthly">매월</option><option value="yearly">매년</option>
         </select>
       </label>
-      <label class="until">종료일<input type="date" name="until"></label>
     </div>
+    <label class="until">반복 종료일 (비우면 계속)<input type="date" name="until"></label>
     <div class="swatches" id="swatches"></div>
     <textarea name="note" rows="3" placeholder="메모"></textarea>
     <div class="sheet-actions">
@@ -81,6 +87,17 @@
     <h3>기기 간 동기화</h3>
     <p id="syncText" class="muted"></p>
     <button id="authBtn" class="primary"></button>
+  </section>
+  <section class="set" id="pushSet">
+    <h3>알림</h3>
+    <p id="pushText" class="muted small"></p>
+    <div class="row-btns"><button id="pushBtn" class="primary">이 기기에서 알림 켜기</button><button id="pingBtn">테스트 알림</button></div>
+    <div class="row2 checkin">
+      <label>아침 계획 알림<input type="time" id="morningAt"></label>
+      <label>밤 체크 알림<input type="time" id="eveningAt"></label>
+    </div>
+    <label class="toggle"><input type="checkbox" id="nagOn"> 밤에 남은 할 일이 있으면 30분 간격으로 2번 더 알림</label>
+    <p class="muted small">일정 알림은 항목마다 시간과 "알림"을 정하면 와요. 앱을 꺼 둬도 옵니다.</p>
   </section>
   <section class="set">
     <h3>화면</h3>

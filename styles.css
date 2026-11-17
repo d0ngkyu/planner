@@ -193,3 +193,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); }
   .month { padding: 6px; }
   .toast { bottom: calc(140px + var(--safe-b)); }
 }
+
+.toggle { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; color: var(--ink); margin: 10px 0 4px; }
+.toggle input { width: 18px; height: 18px; accent-color: var(--accent); }
+.checkin { margin-top: 12px; }
+.set .row-btns .primary { margin-left: 0; }
+.bell { font-size: 12px; color: var(--muted); }

@@ -27,8 +27,10 @@ const sync = createSync({
     }
     records = S.merge(records, remote); persist(); render();
   },
-  onStatus(s) { syncState = s; renderSync(); },
+  onStatus(s) { syncState = s; renderSync(); renderPush(); },
+  onSettings(st) { pushSettings = st; renderPush(); },
 });
+let pushSettings = null;
 
 function put(rec) {
   rec = { ...rec, updatedAt: Math.max(Date.now(), (records[rec.id]?.updatedAt || 0) + 1) };
@@ -47,7 +49,7 @@ function labelText() {
 
 function itemRow(it, date, compact = false) {
   const done = S.isDone(it, date);
-  const rep = it.repeat && it.repeat !== 'none' ? '<span class="rep" title="반복">↻</span>' : '';
+  const rep = (it.repeat && it.repeat !== 'none' ? '<span class="rep" title="반복">↻</span>' : '') + (it.time && it.remind >= 0 && !compact ? '<span class="bell" title="알림">🔔</span>' : '');
   const mark = it.type === 'task'
     ? `<button class="check ${done ? 'on' : ''}" data-toggle="${it.id}" data-date="${date}" aria-label="완료" style="--c:${it.color || COLORS[0]}"></button>`
     : `<span class="ev" style="--c:${it.color || COLORS[1]}"></span>`;
@@ -165,6 +167,7 @@ function openEdit(id, preset = {}) {
   editing = id; editType = it.type; editColor = it.color || COLORS[0];
   form.title.value = it.title || ''; form.date.value = it.date; form.time.value = it.time || '';
   form.repeat.value = it.repeat || 'none'; form.until.value = it.until || ''; form.note.value = it.note || '';
+  form.remind.value = String(it.remind ?? (it.time ? 0 : -1));
   $('#delBtn').hidden = !id;
   syncEditUI(); dlg.showModal();
   if (!id) setTimeout(() => form.title.focus(), 50);
@@ -173,15 +176,17 @@ function syncEditUI() {
   document.querySelectorAll('#typeSeg button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.type === editType));
   document.querySelectorAll('#swatches button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.color === editColor));
   $('.until').hidden = form.repeat.value === 'none';
+  $('.remind').hidden = !form.time.value;
 }
 $('#typeSeg').onclick = (e) => { const b = e.target.closest('button'); if (b) { editType = b.dataset.type; syncEditUI(); } };
 $('#swatches').onclick = (e) => { const b = e.target.closest('button'); if (b) { editColor = b.dataset.color; syncEditUI(); } };
 form.repeat.onchange = syncEditUI;
+form.time.oninput = () => { if (form.time.value && form.remind.value === '-1' && !editing) form.remind.value = '0'; syncEditUI(); };
 form.onsubmit = (e) => {
   e.preventDefault();
   const title = form.title.value.trim(); if (!title) return;
   const base = editing ? records[editing] : { id: S.uid(), kind: 'item', done: false, doneDates: [] };
-  put({ ...base, title, type: editType, date: form.date.value, time: form.time.value || '', repeat: form.repeat.value, until: form.repeat.value === 'none' ? '' : form.until.value, color: editColor, note: form.note.value.trim() });
+  put({ ...base, title, type: editType, date: form.date.value, time: form.time.value || '', repeat: form.repeat.value, until: form.repeat.value === 'none' ? '' : form.until.value, color: editColor, note: form.note.value.trim(), remind: form.time.value ? Number(form.remind.value) : -1 });
   dlg.close(); render();
 };
 $('#delBtn').onclick = () => {
@@ -238,7 +243,7 @@ main.addEventListener('submit', (e) => {
   if (f.dataset.add) {
     const q = parseQuick(v);
     const n = S.itemsOn(records, f.dataset.add).length;
-    put({ id: S.uid(), kind: 'item', ...q, date: f.dataset.add, repeat: 'none', color: q.type === 'event' ? COLORS[1] : COLORS[0], note: '', done: false, doneDates: [], order: n });
+    put({ id: S.uid(), kind: 'item', ...q, date: f.dataset.add, repeat: 'none', color: q.type === 'event' ? COLORS[1] : COLORS[0], note: '', done: false, doneDates: [], order: n, remind: q.time ? 0 : -1 });
   } else if (f.dataset.goalAdd) {
     put({ id: S.uid(), kind: 'goal', scope: f.dataset.goalAdd, text: v, done: false, order: S.goalsOf(records, f.dataset.goalAdd).length });
   }
@@ -274,8 +279,33 @@ $('#results').onclick = (e) => {
 };
 
 // 설정
-$('#settingsBtn').onclick = () => { renderSync(); syncTheme(); $('#settingsDlg').showModal(); };
+$('#settingsBtn').onclick = () => { renderSync(); renderPush(); syncTheme(); $('#settingsDlg').showModal(); };
 $('#authBtn').onclick = async () => { try { syncState.email ? await sync.signOut() : await sync.signIn(); } catch (e) { toast('로그인 실패: ' + (e.code || e.message)); } };
+function renderPush() {
+  const ok = sync.pushSupported(), on = !!localStorage.getItem('planner.pushDevice') && typeof Notification !== 'undefined' && Notification.permission === 'granted';
+  const st = pushSettings || {};
+  $('#pushText').textContent = !sync.enabled || !ok ? '알림은 동기화(Firebase) 설정과 웹 푸시 키를 넣은 뒤 쓸 수 있어요 (README "알림 켜기").'
+    : !syncState.email ? 'Google로 로그인하면 알림을 켤 수 있어요.'
+    : on ? '이 기기에서 알림을 받고 있어요.' : '이 기기는 아직 알림이 꺼져 있어요.';
+  $('#pushBtn').textContent = on ? '알림 다시 연결' : '이 기기에서 알림 켜기';
+  const can = ok && !!syncState.email;
+  ['#pushBtn', '#pingBtn', '#morningAt', '#eveningAt', '#nagOn'].forEach((q) => { $(q).disabled = !can; });
+  if (document.activeElement !== $('#morningAt')) $('#morningAt').value = st.morning ?? '08:00';
+  if (document.activeElement !== $('#eveningAt')) $('#eveningAt').value = st.evening ?? '21:00';
+  $('#nagOn').checked = st.nag !== false;
+}
+const saveCheckin = async () => {
+  try { await sync.saveSettings({ morning: $('#morningAt').value, evening: $('#eveningAt').value, nag: $('#nagOn').checked }); toast('알림 시간을 저장했어요'); }
+  catch (e) { toast(e.message); }
+};
+$('#morningAt').onchange = saveCheckin; $('#eveningAt').onchange = saveCheckin; $('#nagOn').onchange = saveCheckin;
+$('#pushBtn').onclick = async () => {
+  try { await sync.enablePush(); if (!pushSettings) await saveCheckin(); toast('알림을 켰어요. "테스트 알림"으로 확인해 보세요'); }
+  catch (e) { toast(e.message); }
+  renderPush();
+};
+$('#pingBtn').onclick = async () => { try { await sync.ping(); toast('테스트 알림을 보냈어요 (몇 초 걸릴 수 있어요)'); } catch (e) { toast(e.message); } };
+
 $('#themeSeg').onclick = (e) => { const b = e.target.closest('button'); if (b) { ui.theme = b.dataset.theme; saveUI(); syncTheme(); } };
 function syncTheme() {
   document.documentElement.dataset.theme = ui.theme;
@@ -331,6 +361,17 @@ addEventListener('storage', (e) => { if (e.key === KEY) { records = S.merge(reco
 let lastToday = S.today();
 document.addEventListener('visibilitychange', () => { if (!document.hidden && S.today() !== lastToday) { if (ui.date === lastToday) ui.date = S.today(); lastToday = S.today(); render(); } });
 
+// 알림에서 열기: ?date=YYYY-MM-DD&item=ID
+function openFromUrl(href) {
+  const u = new URL(href, location.href), d = u.searchParams.get('date'), id = u.searchParams.get('item');
+  if (!d || !/^\d{4}-\d{2}-\d{2}$/.test(d)) return;
+  ui.date = d; ui.view = 'day'; render();
+  if (id && records[id] && !records[id].deleted) openEdit(id);
+  history.replaceState(null, '', location.pathname);
+}
+navigator.serviceWorker?.addEventListener('message', (e) => { if (e.data?.type === 'open') openFromUrl(e.data.url); });
+
 records = S.compact(records); persist();
 syncTheme(); render(); renderSync(); sync.start();
+openFromUrl(location.href);
 if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});

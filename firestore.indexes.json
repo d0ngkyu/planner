@@ -1,0 +1,10 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "records",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [ { "fieldPath": "time", "order": "ASCENDING" }, { "fieldPath": "remind", "order": "ASCENDING" } ]
+    }
+  ],
+  "fieldOverrides": []
+}

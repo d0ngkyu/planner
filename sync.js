@@ -1,12 +1,12 @@
 // Firebase(Firestore + Google 로그인) 동기화 어댑터. 설정이 없으면 비활성.
 // 저장 경로: users/{uid}/records/{recordId}  — 레코드 단위 last-write-wins (store.merge)
-import { firebaseConfig } from './firebase-config.js';
+import { firebaseConfig, vapidKey } from './firebase-config.js';
 
 const V = '10.12.5';
 const CDN = `https://www.gstatic.com/firebasejs/${V}`;
 
-export function createSync({ onRemote, onStatus }) {
-  let fb = null, user = null, unsub = null;
+export function createSync({ onRemote, onStatus, onSettings = () => {} }) {
+  let fb = null, user = null, unsub = null, unsubMeta = null;
   const pending = new Map();
   let timer = null;
   const enabled = !!firebaseConfig;
@@ -30,6 +30,7 @@ export function createSync({ onRemote, onStatus }) {
       auth.onAuthStateChanged(au, (u) => {
         user = u;
         if (unsub) { unsub(); unsub = null; }
+        if (unsubMeta) { unsubMeta(); unsubMeta = null; }
         if (!u) { onStatus({ state: 'signedOut' }); return; }
         onStatus({ state: 'syncing', email: u.email });
         listen();
@@ -48,6 +49,36 @@ export function createSync({ onRemote, onStatus }) {
       first = false;
       onStatus({ state: snap.metadata.fromCache ? 'offline' : 'synced', email: user.email, at: Date.now() });
     }, (err) => onStatus({ state: 'error', message: err.code || String(err) }));
+    unsubMeta = fs.onSnapshot(fs.doc(db, 'users', user.uid, 'meta', 'settings'), (d) => onSettings(d.exists() ? d.data() : null), () => {});
+  }
+
+  // ---- 푸시 알림 ----
+  const pushSupported = () => enabled && !!vapidKey && 'Notification' in self && 'serviceWorker' in navigator && 'PushManager' in self;
+  async function enablePush() {
+    if (!pushSupported()) throw new Error('이 브라우저/설정에서는 푸시 알림을 쓸 수 없어요');
+    if (!user) throw new Error('먼저 Google로 로그인하세요');
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') throw new Error('알림 권한이 거부됐어요. 브라우저 사이트 설정에서 허용해 주세요');
+    const [m] = await Promise.all([import(`${CDN}/firebase-messaging.js`)]);
+    if (!(await m.isSupported())) throw new Error('이 브라우저는 푸시 알림을 지원하지 않아요');
+    const app = (await import(`${CDN}/firebase-app.js`)).getApp();
+    const reg = await navigator.serviceWorker.ready;
+    const token = await m.getToken(m.getMessaging(app), { vapidKey, serviceWorkerRegistration: reg });
+    const { fs, db } = fb;
+    const id = token.slice(-40).replace(/[^\w-]/g, '_');
+    await fs.setDoc(fs.doc(db, 'users', user.uid, 'devices', id), { token, ua: navigator.userAgent.slice(0, 200), updatedAt: Date.now() });
+    localStorage.setItem('planner.pushDevice', id);
+    return id;
+  }
+  async function saveSettings(settings) {
+    if (!user) throw new Error('먼저 Google로 로그인하세요');
+    const { fs, db } = fb;
+    await fs.setDoc(fs.doc(db, 'users', user.uid, 'meta', 'settings'), { ...settings, tz: 'Asia/Seoul', updatedAt: Date.now() }, { merge: true });
+  }
+  async function ping() {
+    if (!user) throw new Error('먼저 Google로 로그인하세요');
+    const { fs, db } = fb;
+    await fs.addDoc(fs.collection(db, 'users', user.uid, 'pings'), { at: Date.now() });
   }
 
   function push(rec) {
@@ -77,5 +108,5 @@ export function createSync({ onRemote, onStatus }) {
   }
   async function signOut() { if (fb) await fb.auth.signOut(fb.au); }
 
-  return { enabled, start, push, signIn, signOut, get user() { return user; } };
+  return { enabled, start, push, signIn, signOut, enablePush, saveSettings, ping, pushSupported, get user() { return user; } };
 }
