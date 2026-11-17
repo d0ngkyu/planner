@@ -2,7 +2,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "test": "node tests/store.test.mjs && node tests/notify.test.mjs && node tests/achievements.test.mjs && node tests/extras.test.mjs && node tests/mobile.test.mjs && node tests/planner008.test.mjs && node tests/sync.test.mjs && node tests/day-dial.test.mjs",
+    "test": "node tests/store.test.mjs && node tests/notify.test.mjs && node tests/achievements.test.mjs && node tests/extras.test.mjs && node tests/mobile.test.mjs && node tests/planner008.test.mjs && node tests/sync.test.mjs && node tests/day-dial.test.mjs && node tests/inspiration.test.mjs",
     "mobile:build": "node scripts/build-mobile.mjs",
     "mobile:sync": "node scripts/build-mobile.mjs && cap sync android"
   },
@@ -19,3 +19,4 @@
     "esbuild": "^0.28.2"
   }
 }
+

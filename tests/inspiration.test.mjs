@@ -1,0 +1,26 @@
+import assert from 'node:assert/strict';
+import {PIECES,MOODS,pieceSlot,pieceAt,savedPieces,savedId,inspirationRecord,recommendations} from '../inspiration.js';
+import {companionProgress,companionState,visitCompanion,COMPANION_STATES,companionSVG} from '../companion.js';
+import {validateImport,merge,search} from '../store.js';
+assert.equal(PIECES.length,360); assert.equal(new Set(PIECES.map(p=>p.id)).size,360); assert.equal(new Set(PIECES.map(p=>p.text)).size,360);
+for(const p of PIECES) {assert.ok(MOODS[p.mood]?.subs[p.sub]);assert.ok(p.author&&p.source&&p.text);if(p.kind==='고전의 한 문장')assert.match(p.source,/의역/);}
+const morning=pieceSlot(new Date(2026,10,17,8)),afternoon=pieceSlot(new Date(2026,10,17,12));assert.notEqual(morning,afternoon);
+assert.equal(pieceSlot(new Date(2026,10,17,6)),morning);
+const seen=new Set(Array.from({length:360},(_,i)=>pieceAt(morning,i).id));assert.equal(seen.size,360);
+assert.equal(pieceAt(morning,0).id,pieceAt(morning,360).id);assert.equal(pieceAt(morning,-1).id,pieceAt(morning,359).id);
+assert.notEqual(pieceAt(morning,0).id,pieceAt(afternoon,0).id);
+const p=PIECES[0],record=inspirationRecord(p,10),records={[record.id]:record};
+assert.equal(savedPieces(records).length,1);assert.equal(savedPieces({...records,[record.id]:{...record,deleted:true}}).length,0);
+assert.equal(validateImport({records:JSON.parse(JSON.stringify(records))})[record.id].text,p.text);
+assert.equal(merge(records,{[record.id]:{...record,deleted:true,updatedAt:11}})[record.id].deleted,true);
+assert.equal(search(records,p.text.slice(0,8))[0].id,savedId(p.id));
+const similar=recommendations(records,p.mood,p.sub,5);assert.equal(similar.length,5);assert.ok(similar.every(r=>r.sub===p.sub&&r.id!==p.id));
+assert.throws(()=>validateImport({records:{bad:{id:'bad',kind:'inspiration',updatedAt:1}}}));
+const old={id:'old',kind:'item',updatedAt:1,title:'old',type:'task',date:'2026-11-17'};assert.equal(validateImport({records:{old}}).old.title,'old');
+const day=864e5,now=20*day;let visit={lastVisit:now,welcomeUntil:0},progress={total:2,done:0};
+assert.equal(companionState(progress,visit,now),'happy');assert.equal(companionState({...progress,done:1},visit,now),'proud');assert.equal(companionState({...progress,done:2},visit,now),'crown');
+assert.equal(companionState({total:0,done:0},visit,now),'happy');assert.equal(companionState(progress,visit,now+2*day),'sleep');assert.equal(companionState(progress,visit,now+5*day),'waiting');
+visit=visitCompanion(visit,now+5*day);assert.equal(companionState(progress,visit,now+5*day),'welcome');assert.equal(companionState(progress,visit,now+5*day+4*36e5),'happy');
+assert.deepEqual(companionProgress({old},'2026-11-17'),{date:'2026-11-17',total:1,done:0});
+for(const state of Object.keys(COMPANION_STATES))assert.ok(companionSVG(state).includes('<svg'));
+console.log('inspiration: 360 unique entries, no-repeat cycle, slots, recommendations, backup/migration/delete/search and six companion states passed');

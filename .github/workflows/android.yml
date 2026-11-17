@@ -27,7 +27,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm test
       - run: pnpm mobile:sync
-      - run: bash gradlew assembleRelease lintRelease --no-daemon
+      - run: bash gradlew testDebugUnitTest assembleRelease lintRelease --no-daemon
         working-directory: android
       - uses: actions/upload-artifact@v4
         with:

@@ -39,6 +39,9 @@ public class PlannerWidgetProvider extends AppWidgetProvider {
         PendingIntent open = PendingIntent.getActivity(context, 8100, launch, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         for(int id:ids) {
             RemoteViews view = new RemoteViews(context.getPackageName(), R.layout.planner_widget);
+            String companion=CompanionManager.state(context);
+            view.setImageViewResource(R.id.widget_companion,CompanionManager.image(companion));
+            view.setTextViewText(R.id.widget_companion_text,CompanionManager.label(companion));
             view.setTextViewText(R.id.widget_heading, heading);
             view.setTextViewText(R.id.widget_body, body);
             long updated = prefs.getLong("updated", 0);

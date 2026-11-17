@@ -3,9 +3,9 @@
 
     <application
         android:allowBackup="true"
-        android:icon="@drawable/planner_icon"
+        android:icon="@drawable/companion_happy"
         android:label="@string/app_name"
-        android:roundIcon="@drawable/planner_icon"
+        android:roundIcon="@drawable/companion_happy"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
@@ -17,12 +17,28 @@
             android:launchMode="singleTask"
             android:exported="true">
 
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-
         </activity>
+
+        <!-- MainActivity stays enabled for old pinned shortcuts, widgets and notifications. -->
+        <activity-alias android:name=".Icon_happy" android:targetActivity=".MainActivity" android:enabled="true" android:exported="true" android:icon="@drawable/companion_happy" android:label="@string/app_name">
+            <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".Icon_proud" android:targetActivity=".MainActivity" android:enabled="false" android:exported="true" android:icon="@drawable/companion_proud" android:label="@string/app_name">
+            <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".Icon_crown" android:targetActivity=".MainActivity" android:enabled="false" android:exported="true" android:icon="@drawable/companion_crown" android:label="@string/app_name">
+            <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".Icon_sleep" android:targetActivity=".MainActivity" android:enabled="false" android:exported="true" android:icon="@drawable/companion_sleep" android:label="@string/app_name">
+            <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".Icon_waiting" android:targetActivity=".MainActivity" android:enabled="false" android:exported="true" android:icon="@drawable/companion_waiting" android:label="@string/app_name">
+            <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
+        </activity-alias>
+        <activity-alias android:name=".Icon_welcome" android:targetActivity=".MainActivity" android:enabled="false" android:exported="true" android:icon="@drawable/companion_welcome" android:label="@string/app_name">
+            <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
+        </activity-alias>
+        <service android:name=".CompanionJobService" android:permission="android.permission.BIND_JOB_SERVICE" android:exported="true" />
 
         <receiver android:name=".PlannerWidgetProvider" android:exported="false" android:label="오늘 할 일">
             <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
@@ -42,4 +58,5 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 </manifest>

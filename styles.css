@@ -583,3 +583,31 @@ summary { cursor:pointer; padding:12px 4px; min-height:44px; color:var(--muted);
 .dial-schedule button[aria-pressed="true"] { background:var(--soft); }
 @media(max-width:720px) { .dial-card { padding:14px; } .dial-heading h2 { font-size:18px; } .dial-heading .small { font-size:11px; } }
 .dial-detail { scroll-margin-top:140px; scroll-margin-bottom:calc(190px + var(--safe-b)); }
+/* Inspiration: compact discovery card, long-form saved library. */
+#inspirationHost { max-width:760px; margin:12px auto; }
+.piece-card { display:flex; gap:12px; padding:14px; background:var(--card); border:1px solid var(--line); border-radius:18px; }
+.piece-companion { width:54px; flex:0 0 54px; align-self:center; }
+.companion-svg { display:block; width:100%; }
+.piece-main { min-width:0; flex:1; }
+.piece-heading { display:flex; flex-wrap:wrap; gap:6px 12px; align-items:center; }
+.piece-heading b { font-size:13px; }.piece-heading span,.piece-footer { font-size:11px; color:var(--muted); }
+.piece-text { display:block; width:100%; text-align:left; line-height:1.65; font-size:16px; padding:6px 0; overflow-wrap:anywhere; }
+.piece-text:hover { color:var(--accent); }.piece-footer { display:flex; gap:12px; flex-wrap:wrap; }
+.piece-actions { display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
+.piece-actions button { padding:6px 10px; font-size:12px; border-radius:10px; background:var(--soft); }
+.piece-actions button[aria-pressed="true"] { color:var(--accent); font-weight:700; }
+.inspiration-filters { display:flex; gap:6px; flex-wrap:wrap; margin:16px 0; }
+.inspiration-filters button { padding:8px 12px; border:1px solid var(--line); border-radius:12px; font-size:14px; }
+.inspiration-filters button[aria-pressed="true"] { background:var(--accent); color:var(--accent-ink); }
+.inspiration-group { border-top:3px solid var(--c); padding-top:8px; margin:20px 0; }
+.inspiration-group h3 { font-size:20px; margin:10px 0; }
+.inspiration-sub { margin-bottom:18px; }.inspiration-sub summary { font-weight:700; color:var(--ink); }
+.inspiration-entry { padding:16px; margin:10px 0; border:1px solid var(--line); border-radius:14px; background:var(--card); overflow-wrap:anywhere; }
+.inspiration-entry p,#pieceDetailBody p { white-space:pre-wrap; font-size:17px; line-height:1.8; margin:10px 0; }
+.piece-kind { font-size:12px; color:var(--muted); }.piece-source { display:block; font-size:12px; color:var(--muted); line-height:1.6; }
+.piece-source a { color:var(--accent); text-underline-offset:3px; }
+.inspiration-entry button { padding:8px 12px; border-radius:10px; background:var(--soft); margin-top:10px; }
+.inspiration-entry.recommended { background:var(--soft); }
+.inspiration-sub h4 { margin:24px 0 8px; font-size:14px; color:var(--muted); }
+:root[data-font-size="large"] .piece-text,:root[data-font-size="large"] .inspiration-entry p { font-size:19px; }
+@media(max-width:480px) { .piece-card { gap:10px; padding:12px; }.piece-companion { width:42px; flex-basis:42px; }.piece-hint { display:none; }.piece-actions { gap:4px; }.piece-actions button { padding:6px 8px; } }

@@ -1,4 +1,5 @@
 import * as S from './store.js';
+import { createInspiration } from './inspiration-ui.js';
 import { dialView, minutes as dialMinutes, clockText } from './day-dial.js';
 import { CATEGORIES, CATEGORY_FIELDS, categoryOf } from './categories.js';
 import { createSync } from './sync.js';
@@ -15,6 +16,7 @@ const $ = (s, el = document) => el.querySelector(s);
 const esc = (s = '') => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 let records = load();
+let inspiration = null;
 let navAnim = 'fade', fxKey = null, addedId = null, barPrev = null, lastBarDate = null;
 const ui = Object.assign({ view: 'day', dayLayout: 'dial', date: S.today(), theme: 'system', category: 'general', fontSize: 'normal' }, safeJSON(localStorage.getItem(UIKEY)) || {});
 let dialSelection = null;
@@ -25,7 +27,7 @@ function safeJSON(s) { try { return JSON.parse(s); } catch { return null; } }
 function load() { return safeJSON(localStorage.getItem(KEY)) || {}; }
 let saveTimer;
 function flushRecords() { clearTimeout(saveTimer); localStorage.setItem(KEY, JSON.stringify(records)); native?.updateWidget?.(records).catch(console.error); }
-function persist() { clearTimeout(saveTimer); saveTimer = setTimeout(() => { flushRecords(); native?.reschedule().catch((e) => toast('알림 예약 실패: ' + e.message)); }, 150); }
+function persist() { clearTimeout(saveTimer); saveTimer = setTimeout(() => { flushRecords(); inspiration?.refresh(); native?.reschedule().catch((e) => toast('알림 예약 실패: ' + e.message)); }, 150); }
 window.addEventListener('planner-flush', flushRecords);
 window.addEventListener('pagehide', flushRecords);
 function saveUI() { localStorage.setItem(UIKEY, JSON.stringify({ view: ui.view, dayLayout: ui.dayLayout, theme: ui.theme, category: ui.category, fontSize: ui.fontSize })); }
@@ -461,15 +463,16 @@ $('#q').oninput = () => {
   const res = S.search(records, $('#q').value);
   $('#results').innerHTML = res.map((r) => {
     const date = r.date || (r.scope ? r.scope.slice(2) : r.id.replace(/^note:\w:/, ''));
-    const kind = r.kind === 'goal' ? '목표' : r.kind === 'note' ? '메모' : r.type === 'event' ? '일정' : '할 일';
+    const kind = r.kind === 'inspiration' ? '영감' : r.kind === 'goal' ? '목표' : r.kind === 'note' ? '메모' : r.type === 'event' ? '일정' : '할 일';
     const text = r.title || r.text || '';
     return `<li data-res="${r.id}" data-date="${date.length === 7 ? date + '-01' : date}"><span class="k">${kind}</span><span class="t">${esc(text.slice(0, 80))}</span><span class="d">${date}</span></li>`;
   }).join('') || ($('#q').value ? '<li class="empty">결과 없음</li>' : '');
 };
 $('#results').onclick = (e) => {
   const li = e.target.closest('[data-res]'); if (!li) return;
-  const r = records[li.dataset.res]; ui.date = r.kind === 'item' && !r.date ? S.today() : li.dataset.date;
+  const r = records[li.dataset.res]; if(r.kind !== 'inspiration') ui.date = r.kind === 'item' && !r.date ? S.today() : li.dataset.date;
   $('#searchDlg').close();
+  if(r.kind === 'inspiration') { inspiration.open(); return; }
   if (r.kind === 'item') { setView(r.date ? 'day' : 'inbox'); openEdit(r.id); } else setView(r.id.startsWith('note:w') || (r.scope || '').startsWith('w') ? 'week' : r.id.startsWith('note:m') || (r.scope || '').startsWith('m') ? 'month' : 'day');
 };
 
@@ -842,6 +845,7 @@ window.addEventListener('planner-resume', () => { timer.resumeIfRunning(); rende
 
 // Retain deletion tombstones: a device can reconnect after more than 90 days.
 persist();
+inspiration = createInspiration({getRecords:()=>records,save:put,remove,native});
 syncTheme(); render(); renderSync(); sync.start();
 openFromUrl(location.href);
 timer.resumeIfRunning();

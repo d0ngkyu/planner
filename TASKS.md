@@ -141,3 +141,9 @@
 - PR7 main병합 d939a2a91135cf1465325c86da55f90be8fd0f5e. Pages44026674930 build/deploy/report success. 공개설치페이지0.3.0/원판모듈HTTP200·swv8 확인. 공개APK재다운로드 SHA256 92b8cf3b171b7ef9d47adcc6d219cc27135e6cdd392675735f0363474716f16a 일치.
 - 설치 https://d0ngkyu.github.io/planner/downloads/ , 웹 https://d0ngkyu.github.io/planner/ . 앱소스0370af8/빌드44026008032, 기존인증서v2v3/내부6asset 대조. 기존앱 삭제없는 업데이트. 실제 사용자폰 설치/원판터치/알림 미확인.
 - 전체로직검사+원판4너비/기존웹·네이티브모의8조합 성공, 기존기능/데이터 유지. 동기화는Firebase null로미연결 유지. 다음은 실제폰사용감/원판배치 조정 또는 Firebase프로젝트정보 확보 후 연결. 게시잠금해제.
+
+### INSPIRATION-010 구현/검증 중 · 2026-11-17
+- 사용자 추가 요청에 따라 72개 초안에서 360개 고유 글로 확대(창작348/속담10/고전의역2). 출처/분류 INSPIRATION.md. 시간대 자동교체·탭 다음·이전·저장스냅샷·6느낌12하위분류·미저장 유사글3개.
+- 새싹 6표정, Android launcher aliases/6시간 JobScheduler/설정해제/위젯 표정. API33이상 원자적 전환, 이전버전 새 아이콘을 먼저 활성화. OS/런처 반영과 업그레이드 실제폰은 미검증.
+- 직접검증: pnpm test 전체 통과(360고유/순환/추천/백업/삭제/검색/6상태 포함), mobile:sync 성공. Chromium 웹/네이티브모의 각360/390/768/1360px에서 새글/이전/저장/재시작/영감함/추천저장·해제/출처/시간대/아이콘설정/큰글씨·다크 통과. 네이티브 실기기 검사가 아님.
+- 웹v9/Android0.4.0(code5) 준비. CI/JUnit/Android lint 및 APK 게시 증거는 후속 기록. 기존 앱/원판 회귀검사 진행 중, Firebase null 유지.

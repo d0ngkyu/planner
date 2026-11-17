@@ -1,5 +1,6 @@
 import { mkdir, copyFile, readFile, writeFile } from 'node:fs/promises';
 import { build } from 'esbuild';
+import './build-companion.mjs';
 await mkdir('www', { recursive: true });
 for (const f of ['styles.css', 'icon.svg', 'icon-192.png', 'icon-512.png']) await copyFile(f, `www/${f}`);
 const html = (await readFile('index.html', 'utf8'))
