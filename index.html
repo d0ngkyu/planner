@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f6f4ef" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#16181b" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="플래너">
+<title>플래너</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="period">
+      <button class="icon" id="prev" aria-label="이전">‹</button>
+      <h1 id="label"></h1>
+      <button class="icon" id="next" aria-label="다음">›</button>
+      <button class="chip" id="todayBtn">오늘</button>
+    </div>
+    <nav class="views" id="views" role="tablist">
+      <button data-view="day" role="tab">일</button>
+      <button data-view="week" role="tab">주</button>
+      <button data-view="month" role="tab">월</button>
+    </nav>
+    <div class="tools">
+      <span class="sync-dot" id="syncDot" title=""></span>
+      <button class="icon" id="searchBtn" aria-label="검색">⌕</button>
+      <button class="icon" id="settingsBtn" aria-label="설정">⚙</button>
+    </div>
+  </header>
+  <main id="main"></main>
+  <button class="fab" id="fab" aria-label="새 항목">＋</button>
+</div>
+
+<dialog id="editDlg" class="sheet">
+  <form method="dialog" id="editForm">
+    <div class="sheet-head">
+      <div class="seg" id="typeSeg">
+        <button type="button" data-type="task">할 일</button>
+        <button type="button" data-type="event">일정</button>
+      </div>
+      <button type="button" class="icon" data-close aria-label="닫기">✕</button>
+    </div>
+    <input name="title" class="title-input" placeholder="제목" autocomplete="off" required>
+    <div class="row2">
+      <label>날짜<input type="date" name="date" required></label>
+      <label>시간<input type="time" name="time"></label>
+    </div>
+    <div class="row2">
+      <label>반복
+        <select name="repeat">
+          <option value="none">안 함</option><option value="daily">매일</option><option value="weekdays">평일</option>
+          <option value="weekly">매주</option><option value="monthly">매월</option><option value="yearly">매년</option>
+        </select>
+      </label>
+      <label class="until">종료일<input type="date" name="until"></label>
+    </div>
+    <div class="swatches" id="swatches"></div>
+    <textarea name="note" rows="3" placeholder="메모"></textarea>
+    <div class="sheet-actions">
+      <button type="button" class="danger" id="delBtn">삭제</button>
+      <button type="submit" class="primary">저장</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="searchDlg" class="sheet">
+  <div class="sheet-head"><input id="q" placeholder="할 일·일정·메모 검색" autocomplete="off"><button type="button" class="icon" data-close>✕</button></div>
+  <ul id="results" class="results"></ul>
+</dialog>
+
+<dialog id="settingsDlg" class="sheet">
+  <div class="sheet-head"><h2>설정</h2><button type="button" class="icon" data-close>✕</button></div>
+  <section class="set">
+    <h3>기기 간 동기화</h3>
+    <p id="syncText" class="muted"></p>
+    <button id="authBtn" class="primary"></button>
+  </section>
+  <section class="set">
+    <h3>화면</h3>
+    <div class="seg" id="themeSeg">
+      <button data-theme="system">자동</button><button data-theme="light">밝게</button><button data-theme="dark">어둡게</button>
+    </div>
+  </section>
+  <section class="set">
+    <h3>백업</h3>
+    <div class="row-btns">
+      <button id="exportBtn">내보내기(.json)</button>
+      <label class="btn">가져오기<input type="file" id="importFile" accept="application/json" hidden></label>
+    </div>
+    <p class="muted small">가져오기는 기존 데이터와 합쳐집니다(같은 항목은 최신 수정본 유지).</p>
+  </section>
+  <p class="muted small">단축키: ←/→ 이동 · T 오늘 · D/W/M 보기 · N 새 항목 · / 검색</p>
+</dialog>
+
+<div id="toast" class="toast" role="status"></div>
+<script type="module" src="app.js"></script>
+</body>
+</html>
