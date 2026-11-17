@@ -2,10 +2,10 @@
 
 | 항목 | 값 |
 |---|---|
-| 배포 담당 | Codex (INSPIRATION-010 게시 잠금, source d4924b7, target 0.4.0/code5) |
-| 현재 버전 | 웹 sw `planner-v8` / Android 0.3.0 (versionCode 4) — 게시 완료, 폰 적용 미확인 |
+| 배포 담당 | 없음 — INSPIRATION-010 게시 검증 완료 |
+| 현재 버전 | 웹 sw `planner-v9` / Android 0.4.0 (versionCode 5) — 게시 완료, 폰 적용 미확인 |
 
-## INSPIRATION-010 · Codex · 진행 · 2026-11-17
+## INSPIRATION-010 · Codex · 게시 완료 · 2026-11-17
 - 승인: 시간대별 한조각+누를때마다 새글, 저장/느낌별하위분류/비슷한글추천. 앞선 캐릭터상태/Android접속간격에따른아이콘/위젯표정 제안 포함.
 - 기준 main9191816, clean/열린PR0/배포담당없음 확인. branch codex/inspiration-010. 소유: 콘텐츠/영감모델·UI/캐릭터벡터/네이티브아이콘·작업예약/위젯 및 검증·기록.
 - 기본 글귀는 직접 창작/전래속담/출처확인된 고전의 자체의역을 구분. 현대작품 장문/잘못된명언출처 사용안함. 외부유료AI추천 없이 태그기반 오프라인 유사추천.
@@ -163,3 +163,9 @@
 - Android0.4.0(versionCode5) 기존키 v2/v3 서명검증 성공. certificate8197dcd546b9e42c683f51455c46e477858d9a6278fa478074a1f5cdbab4d908. APK SHA2562508a2aa615cfd1a952ef554c7724154e5265de7be4582acb060f4ce9a10d4e2. APK내6개web asset 로컬최종번들과 일치(CRLF만정규화).
 - 최종한조각 신규8조합, 기존앱8조합 재검사 성공(JS오류0), 원판4너비 성공. 임시categoryToggle 타임아웃은 최종검사에서 재현되지 않음. 서비스워커v9 오프라인새로고침·다음글·저장·재실행 유지 성공.
 - 배포담당 Codex 재확인. 기존main9191816, source d4924b7, target 웹v9/Android0.4.0/code5. PR9에 서명APK/manifest/안내 추가 후 main병합→Pages 공개와 다운로드해시 검증 예정. 실제폰설치/런처표정전환/Firebase실연결은 미완료.
+
+### INSPIRATION-010 게시 완료 · 2026-11-17
+- PR9 main병합 e97b684aa3f5930b29f96a629ec14ccc85b324be. Pages44041707471 성공. 공개페이지/설치안내 HTTP200, swv9/신규모듈/manifest source d4924b7 직접확인.
+- 공개0.4.0 APK를 재다운로드하여 SHA2562508a2aa615cfd1a952ef554c7724154e5265de7be4582acb060f4ce9a10d4e2 일치 확인. build44041079195/기존서명/내부6asset 검증은 위 기록. 검증 스크립트 첫 시도는 PowerShell 예약변수 대입으로 중단되어 작업전용변수로 수정 후 전체재실행 성공.
+- 최종범위: 360개글·시간대/탭교체·이전·저장스냅샷·6느낌12하위분류·유사추천·백업검색, 한조각 내용정렬/동일너비3버튼, 심플한 달력형 홈아이콘6표정/설정/위젯. 전체화면 재배치는 적용하지 않음.
+- 게시담당잠금 해제. 실제폰 업데이트/홈아이콘 전환/위젯/알림은 사용자기기에서 미검증, Firebase실연결도 미완료. 설치 https://d0ngkyu.github.io/planner/downloads/ ; 기존앱삭제없이업데이트. 다음은 실제사용감 확인 및 Firebase프로젝트연결정보 확보.
