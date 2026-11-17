@@ -1,4 +1,5 @@
 import * as S from './store.js';
+import { dialView, minutes as dialMinutes, clockText } from './day-dial.js';
 import { CATEGORIES, CATEGORY_FIELDS, categoryOf } from './categories.js';
 import { createSync } from './sync.js';
 import * as ACH from './achievements.js';
@@ -15,7 +16,8 @@ const esc = (s = '') => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<
 
 let records = load();
 let navAnim = 'fade', fxKey = null, addedId = null, barPrev = null, lastBarDate = null;
-const ui = Object.assign({ view: 'day', date: S.today(), theme: 'system', category: 'general', fontSize: 'normal' }, safeJSON(localStorage.getItem(UIKEY)) || {});
+const ui = Object.assign({ view: 'day', dayLayout: 'dial', date: S.today(), theme: 'system', category: 'general', fontSize: 'normal' }, safeJSON(localStorage.getItem(UIKEY)) || {});
+let dialSelection = null;
 ui.view = 'day';
 ui.date = S.today(); // 열 때는 항상 오늘부터
 
@@ -26,7 +28,7 @@ function flushRecords() { clearTimeout(saveTimer); localStorage.setItem(KEY, JSO
 function persist() { clearTimeout(saveTimer); saveTimer = setTimeout(() => { flushRecords(); native?.reschedule().catch((e) => toast('알림 예약 실패: ' + e.message)); }, 150); }
 window.addEventListener('planner-flush', flushRecords);
 window.addEventListener('pagehide', flushRecords);
-function saveUI() { localStorage.setItem(UIKEY, JSON.stringify({ view: ui.view, theme: ui.theme, category: ui.category, fontSize: ui.fontSize })); }
+function saveUI() { localStorage.setItem(UIKEY, JSON.stringify({ view: ui.view, dayLayout: ui.dayLayout, theme: ui.theme, category: ui.category, fontSize: ui.fontSize })); }
 
 // ---------- 동기화 ----------
 let syncState = { state: 'off' };
@@ -106,13 +108,17 @@ function renderCategories() {
 $('#quickCategories').onclick = e => { const b = e.target.closest('[data-category]'); if(b) { ui.category=b.dataset.category; saveUI(); renderCategories(); $('#dockInput').focus(); } };
 function dayView() {
   const d = ui.date, items = S.itemsOn(records, d);
+  const circular = ui.dayLayout !== 'list';
+  const listed = circular ? items.filter(i=>dialMinutes(i.time)===null) : items;
   const od = d === S.today() ? S.overdue(records, d) : [];
   const tasks = items.filter((i) => i.type === 'task'), doneN = tasks.filter((i) => S.isDone(i, d)).length;
   return `<div class="day-layout">
+    <div class="day-view-switch" aria-label="하루 보기 방식"><button data-day-layout="dial" aria-pressed="${circular}">◷ 원판</button><button data-day-layout="list" aria-pressed="${!circular}">☷ 목록</button></div>
+    ${circular ? dialView(records,d,dialSelection) : ''}
     <section class="card">
-      <h3>${d === S.today() ? '오늘' : fmtMD(d)} 할 일 ${tasks.length ? `<span class="count">${doneN}/${tasks.length}</span>` : ''}<button class="chip" data-reorder>순서 변경</button><button class="chip" data-routine-open>＋ 루틴</button></h3>
+      <h3>${circular?'시간 미정인 할 일':`${d === S.today() ? '오늘' : fmtMD(d)} 할 일`} ${tasks.length ? `<span class="count" title="이날 전체 할 일 완료 수">${doneN}/${tasks.length}</span>` : ''}<button class="chip" data-reorder>순서 변경</button><button class="chip" data-routine-open>＋ 루틴</button></h3>
       ${tasks.length ? `<div class="bar"><i data-pct="${(doneN / tasks.length) * 100}" style="width:${barPrev ?? (doneN / tasks.length) * 100}%"></i></div>` : ''}
-      <ul class="list">${items.map((i) => itemRow(i, d, false, true)).join('') || '<li class="empty">비어 있어요. 아래에서 추가하거나 루틴을 넣어 보세요.</li>'}</ul>
+      <ul class="list">${listed.map((i) => itemRow(i, d, false, true)).join('') || '<li class="empty">비어 있어요. 아래에서 추가하거나 루틴을 넣어 보세요.</li>'}</ul>
       <p class="muted small">아래 입력창에서 하나씩 추가해 보세요.</p>
     </section>
     ${hintCard(d)}
@@ -231,6 +237,7 @@ function render() {
   const m = $('#main');
   m.innerHTML = ui.view === 'inbox' ? inboxView() : ui.view === 'day' ? dayView() : ui.view === 'week' ? weekView() : ui.view === 'stats' ? statsView() : monthView();
   m.dataset.view = ui.view;
+  updateDialClock();
   const orderButton = m.querySelector('[data-reorder]');
   if(orderButton && m.classList.contains('reordering')) orderButton.textContent = '정렬 완료';
   if (navAnim) { m.classList.remove('anim-next', 'anim-prev', 'anim-fade'); void m.offsetWidth; m.classList.add('anim-' + navAnim); navAnim = null; }
@@ -242,6 +249,16 @@ function render() {
   document.querySelectorAll('textarea.memo').forEach(autoGrow);
 }
 function autoGrow(el) { el.style.height = 'auto'; el.style.height = Math.max(80, el.scrollHeight + 2) + 'px'; }
+function updateDialClock() {
+  const needle=$('.dial-now'); if(!needle) return;
+  const now=new Date(), minute=now.getHours()*60+now.getMinutes();
+  needle.style.display=ui.date===S.today()?'':'none';
+  needle.setAttribute('transform',`rotate(${minute/4} 180 180)`);
+  $('.dial-clock-label').textContent=ui.date===S.today()?'지금':'선택한 날';
+  $('.dial-clock').textContent=ui.date===S.today()?clockText(minute):ui.date.slice(5).replace('-','.');
+}
+setInterval(updateDialClock,30000);
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) updateDialClock(); });
 
 function renderSync() {
   const dot = $('#syncDot'), s = syncState;
@@ -366,7 +383,9 @@ const main = $('#main');
 main.addEventListener('click', (e) => {
   const t = e.target;
   let el;
-  if(t.closest('[data-reorder]')) { main.classList.toggle('reordering'); t.closest('button').textContent = main.classList.contains('reordering') ? '정렬 완료' : '순서 변경'; return; }
+  if((el=t.closest('[data-day-layout]'))) { ui.dayLayout=el.dataset.dayLayout; main.classList.remove('reordering'); saveUI(); render(); return; }
+  if((el=t.closest('[data-dial-select]'))) { dialSelection=el.dataset.dialSelect; render(); $('.dial-detail')?.scrollIntoView({block:'nearest',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'}); return; }
+  if(t.closest('[data-reorder]')) { if(ui.dayLayout!=='list') { ui.dayLayout='list'; saveUI(); render(); } main.classList.toggle('reordering'); main.querySelector('[data-reorder]').textContent = main.classList.contains('reordering') ? '정렬 완료' : '순서 변경'; return; }
   if ((el = t.closest('[data-order]'))) { S.reorderDay(records, ui.date, el.dataset.order, Number(el.dataset.step)).forEach(put); render(); return; }
   if ((el = t.closest('[data-toggle]'))) {
     const it = records[el.dataset.toggle], d = el.dataset.date, nu = put(S.toggleDone(it, d));
@@ -405,6 +424,7 @@ main.addEventListener('click', (e) => {
   if ((el = t.closest('[data-edit]'))) { openEdit(el.dataset.edit); }
 });
 main.addEventListener('dblclick', (e) => { const el = e.target.closest('[data-pick]'); if (el) { ui.date = el.dataset.pick; setView('day'); } });
+main.addEventListener('keydown',e=>{ if(e.target.matches('path[data-dial-select]') && ['Enter',' '].includes(e.key)) { e.preventDefault(); const key=e.target.dataset.dialSelect; dialSelection=key; render(); [...main.querySelectorAll('path[data-dial-select]')].find(p=>p.dataset.dialSelect===key)?.focus(); } });
 main.addEventListener('submit', (e) => {
   e.preventDefault();
   const f = e.target;

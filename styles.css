@@ -552,3 +552,34 @@ summary { cursor:pointer; padding:12px 4px; min-height:44px; color:var(--muted);
  .inbox-grid { grid-template-columns:1fr; }
  .item { gap:6px; }
 }
+/* 24-hour day dial: alternate day view, one selected-detail card. */
+.day-view-switch { display:flex; gap:6px; padding:4px; width:fit-content; background:var(--soft); border-radius:16px; }
+.day-view-switch button { min-width:92px; padding:8px 16px; border-radius:12px; color:var(--muted); }
+.day-view-switch button[aria-pressed="true"] { background:var(--card); color:var(--ink); box-shadow:var(--shadow); font-weight:700; }
+.dial-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.dial-heading h2 { font-size:20px; margin:0; }
+.day-dial { display:block; width:100%; max-width:440px; margin:0 auto; overflow:visible; }
+.dial-base { fill:var(--soft); }
+.dial-center { fill:var(--card); }
+.dial-tick { stroke:var(--muted); stroke-width:1; opacity:.55; }
+.dial-hour { fill:var(--muted); font-size:12px; font-weight:600; }
+.dial-event-label { fill:white; font-size:12px; font-weight:650; pointer-events:none; paint-order:stroke; stroke:rgba(0,0,0,.22); stroke-width:2px; }
+.dial-segment path { cursor:pointer; stroke:var(--card); stroke-width:1.5; opacity:.8; }
+.dial-segment.selected path, .dial-segment path:focus-visible { opacity:1; stroke:var(--ink); stroke-width:2.5; outline:none; }
+.dial-segment.completed path { opacity:.35; }
+.dial-clock { fill:var(--ink); font-size:23px; font-weight:750; }
+.dial-clock-label { fill:var(--muted); font-size:11px; }
+.dial-now { pointer-events:none; }
+.dial-now line { stroke:var(--ink); stroke-width:2; stroke-dasharray:3 2; }
+.dial-now circle { fill:var(--ink); stroke:var(--card); stroke-width:2; }
+.dial-detail { border-left:4px solid var(--c); background:var(--soft); padding:16px; border-radius:12px; overflow-wrap:anywhere; }
+.dial-detail-meta { display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; font-size:12px; color:var(--muted); }
+.dial-detail h3 { margin:8px 0 12px; font-size:20px; }
+.dial-detail button { padding:8px 14px; border-radius:10px; }
+.dial-schedule button { width:100%; display:flex; align-items:center; gap:10px; text-align:left; border-bottom:1px solid var(--line); padding:10px 6px; }
+.dial-schedule button::before { content:''; width:8px; height:8px; background:var(--c); border-radius:50%; flex-shrink:0; }
+.dial-schedule button span { font-size:12px; white-space:nowrap; color:var(--muted); }
+.dial-schedule button b { font-size:15px; overflow-wrap:anywhere; }
+.dial-schedule button[aria-pressed="true"] { background:var(--soft); }
+@media(max-width:720px) { .dial-card { padding:14px; } .dial-heading h2 { font-size:18px; } .dial-heading .small { font-size:11px; } }
+.dial-detail { scroll-margin-top:140px; scroll-margin-bottom:calc(190px + var(--safe-b)); }

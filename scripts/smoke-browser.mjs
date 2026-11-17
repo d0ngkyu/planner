@@ -33,6 +33,7 @@ try {
       };
     });
     await page.goto(`http://127.0.0.1:${server.address().port}/`);
+    await page.locator('[data-day-layout=list]').click();
     await page.locator('#fab').click();
     await page.locator('#editDlg input[name=title]').fill('앱 보존 검사');
     await page.locator('#editDlg button[type=submit]').click();
