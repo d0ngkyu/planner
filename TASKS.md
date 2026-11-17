@@ -2,7 +2,7 @@
 
 | 항목 | 값 |
 |---|---|
-| 배포 담당 | Codex (INSPIRATION-010 글귀/영감함/캐릭터 구현) |
+| 배포 담당 | Codex (INSPIRATION-010 게시 잠금, source d4924b7, target 0.4.0/code5) |
 | 현재 버전 | 웹 sw `planner-v8` / Android 0.3.0 (versionCode 4) — 게시 완료, 폰 적용 미확인 |
 
 ## INSPIRATION-010 · Codex · 진행 · 2026-11-17
@@ -157,3 +157,9 @@
 - 사용자 명확화: 정렬 대상은 '한조각'. 전체 헤더/카테고리 재배치 시도는 미커밋 상태에서 되돌림. 카드 안 제목/본문/출처 왼쪽선 통일, 하단 저장/다음/영감함을 동일너비3열로 정렬. 캐릭터는 카드에 노출하지 않고 홈 아이콘/위젯/설정에서만 사용.
 - 중간 소스0d43f26의 Android29/44039918752는 JUnit·lint·APK빌드 성공. 카드 정렬 최종수정 때문에 해당 APK는 게시하지 않고 다시 빌드한다.
 - 전체배치 시험 실행 중 되돌림과 겹친 기존 smoke-browser 마지막조합에서 제거된 임시 #categoryToggle 타임아웃 발생(제품오류로 확정하지 않음). 최종파일로 재검사해 기록한다. 이전 원본회귀8조합/원판4너비는 최초구현에서 통과한 별도증거.
+
+### INSPIRATION-010 게시 전 검증 · 2026-11-17
+- 최종앱소스 d4924b7c8fceb384ada9a6595610d9a950d32066. Android Actions44041079195(run30) 성공: pnpm test/mobile:sync/testDebugUnitTest/assembleRelease/lintRelease. artifact14309761072 ZIP digest8d918b29da9d49c64b1ac7dfbd0cf5cae022812a9ced65ddad80bb7ba4f3650a 일치.
+- Android0.4.0(versionCode5) 기존키 v2/v3 서명검증 성공. certificate8197dcd546b9e42c683f51455c46e477858d9a6278fa478074a1f5cdbab4d908. APK SHA2562508a2aa615cfd1a952ef554c7724154e5265de7be4582acb060f4ce9a10d4e2. APK내6개web asset 로컬최종번들과 일치(CRLF만정규화).
+- 최종한조각 신규8조합, 기존앱8조합 재검사 성공(JS오류0), 원판4너비 성공. 임시categoryToggle 타임아웃은 최종검사에서 재현되지 않음. 서비스워커v9 오프라인새로고침·다음글·저장·재실행 유지 성공.
+- 배포담당 Codex 재확인. 기존main9191816, source d4924b7, target 웹v9/Android0.4.0/code5. PR9에 서명APK/manifest/안내 추가 후 main병합→Pages 공개와 다운로드해시 검증 예정. 실제폰설치/런처표정전환/Firebase실연결은 미완료.
