@@ -93,3 +93,18 @@
 - 라이트#FAF9F6/다크#141517·세이지, 하단빠른입력·44px버튼·눌림/체크·미연결표시 구현. 기존33+모바일12검사, 웹/네이티브모의 각4크기 8조합·4뷰·다크·동작줄이기 검사, JS오류0. 기록화면 넘침 수정 후 통과. 실제 APK앱소스 f3b96ff/빌드44019274321, 내부6asset 대조 및 기존인증서 v2/v3검증 성공.
 - 설치/웹 주소 https://d0ngkyu.github.io/planner/downloads/ , https://d0ngkyu.github.io/planner/ . 0.1.0 삭제 없이 새 APK 설치 안내, 실제 사용자 폰 업데이트/데이터유지/키보드/알림 수신은 미검증. Firebase 연결·다음 기능은 후속.
 - 게시 잠금 해제. Gemini 협업 종료, Codex·Claude 운영(허브PR5 53777005·이PC AGENTS 반영). Gemini 기존 기여 보존, CLI 설치/외부 계정권한 해제/상대 통지 없음.
+
+### PLANNER-008 · 구현/검증 (2026-11-17)
+- 추가 사용자 결정: 카테고리별 입력 양식 차별화, 독서는 책/범위/내용/생각·후기. 운동·공부·자기계발·업무·생활·집안일·건강·식단·돈관리·쇼핑·취미·창작·관계·여행·행정·회고까지 일반 포함18종. 첫 화면은 자주 쓰는 항목+전체 펼치기.
+- 소스38c6fa9d9870f55e53eb1455140e2b52c0210525, PR5. 날짜 없는 item은 기존 모델의 date=''로 호환, 일정/연체/알림에서 제외. 날짜 지정으로 이동. categoryDetails는 카테고리 변경시 보존하며 검색/백업/병합 대상, 기존 항목 일괄 재작성 없음. 날짜별 dayOrder는 반복 일정 다른 날짜/시간 자체를 바꾸지 않음.
+- 웹v7/Android0.2.0(code3). 일간 중심·하루기록접기·큰글자설정·업적설정이동, 위젯8일스냅샷/5개/마지막기록 표시. 실제 위젯 런처/리사이즈/날짜변경/앱 업데이트는 미검증.
+- 직접 pnpm test: 기존45 검사 및 신규 inbox/order/backup/category/widget 데이터 검사, sync 모의(cache첫조회 차단/오래된삭제보호/업로드/다른계정차단) 통과. pnpm mobile:sync 성공. Chromium 웹/네이티브 어댑터 모의 각각360/390/768/1360 8조합, 보관함 입력/카테고리왕복기록유지/재실행/날짜이동/순서유지/5뷰/가로넘침/44px/다크/큰글자/동작줄이기 검사통과, JS오류0. 독서 양식390px 캡처 직접 확인.
+- 확인된 검사 실패: 기존 smoke가 옛 동기화 안내 문구를 기대해 실패 → 새 문구에 맞게 기대값 변경 후8조합 통과. 제품 데이터 손상/원격실동기화 실패를 뜻하지 않음.
+- Firebase는 여전히 null. Android/Web 공통 이메일 로그인 준비/서버트랜잭션 최신수정우선/삭제표시보존/다른계정로컬업로드차단. 실제 Auth·Firestore 생성/보안규칙배포·두기기시험 미완료. 사용자에게 기존 프로젝트 유무 요청 중이며 임의 프로젝트/과금 생성 없음.
+- 위젯 구현 참고: https://developer.android.com/develop/ui/views/appwidgets/advanced ; 인증: https://firebase.google.com/docs/auth/web/password-auth . 코드/모의검사와 서비스실동작/실기기검증 구분.
+- Actions44023238076 assembleRelease/lintRelease 진행 중. 빌드 검증·서명·원격 APK 해시 확인 전 게시 완료로 처리하지 않음. 허브PR7 병합12d85b2에 요청/제한 기록.
+
+### PLANNER-008 · 게시 준비
+- 담당 Codex, APK source38c6fa9d9870f55e53eb1455140e2b52c0210525, Android0.2.0(code3), 웹v7. Actions44023238076 빌드/린트/검사 전부 success. ZIP SHA256 bf8f7f11ad8de5a1dd182b3f402b9a5b5e12f0c4e55c26cd094e0d6ae3666e97 직접 대조.
+- 같은 인증서8197dcd546b9e42c683f51455c46e477858d9a6278fa478074a1f5cdbab4d908로 v2/v3 서명·검증. APK SHA256 240b1e30551c90a9e7b72d945b20fc0b519de250eea42eba58ecfc0c1dacdc46. APK 내부6asset와 로컬 소스 빌드 결과 일치(텍스트CRLF 정규화, PNG바이트).
+- PR5로 downloads/planner-0.2.0.apk/manifest/설치안내 및 소스 게시 예정. 이전APK 보존. Firebase 미연결 상태 명시, 실제 폰 설치/위젯/두기기 동기화 완료 아님. 게시 직전 원격 TASKS/PR5 head 재조회.
