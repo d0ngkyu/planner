@@ -27,6 +27,7 @@
       <button data-view="day" role="tab">일</button>
       <button data-view="week" role="tab">주</button>
       <button data-view="month" role="tab">월</button>
+      <button data-view="stats" role="tab">기록</button>
     </nav>
     <button class="me" id="meBtn" aria-label="업적">
       <span class="me-icon" id="meIcon"></span>
@@ -38,6 +39,7 @@
       <button class="icon" id="settingsBtn" aria-label="설정">⚙</button>
     </div>
   </header>
+  <button class="focus-pill" id="focusPill" hidden></button>
   <main id="main"></main>
   <button class="fab" id="fab" aria-label="새 항목">＋</button>
 </div>
@@ -74,6 +76,10 @@
     <label class="until">반복 종료일 (비우면 계속)<input type="date" name="until"></label>
     <div class="swatches" id="swatches"></div>
     <textarea name="note" rows="3" placeholder="메모"></textarea>
+    <div class="task-acts" id="taskActs">
+      <button type="button" id="focusBtn">⏱ 집중 시작</button>
+      <button type="button" id="postponeBtn">↷ 내일로</button>
+    </div>
     <div class="sheet-actions">
       <button type="button" class="danger" id="delBtn">삭제</button>
       <button type="submit" class="primary">저장</button>
@@ -118,7 +124,7 @@
     </div>
     <p class="muted small">가져오기는 기존 데이터와 합쳐집니다(같은 항목은 최신 수정본 유지).</p>
   </section>
-  <p class="muted small">단축키: ←/→ 이동 · T 오늘 · D/W/M 보기 · N 새 항목 · / 검색</p>
+  <p class="muted small">단축키: ←/→ 이동 · T 오늘 · D/W/M/S 보기 · N 새 항목 · / 검색</p>
 </dialog>
 
 <dialog id="achDlg" class="sheet wide">
@@ -129,6 +135,16 @@
 <dialog id="celebDlg" class="sheet celeb">
   <div id="celebBody"></div>
   <div class="sheet-actions"><button type="button" id="celebMore">업적 보기</button><button type="button" class="primary" data-close>좋아요</button></div>
+</dialog>
+
+<dialog id="routineDlg" class="sheet">
+  <div class="sheet-head"><h2>루틴</h2><button type="button" class="icon" data-close>✕</button></div>
+  <div id="routineBody"></div>
+</dialog>
+
+<dialog id="focusDlg" class="sheet focus">
+  <div class="sheet-head"><span class="muted small">집중 타이머</span><button type="button" class="icon" data-close aria-label="작게 보기">⌄</button></div>
+  <div id="focusBody"></div>
 </dialog>
 
 <div id="fx" class="fx" aria-hidden="true"></div>

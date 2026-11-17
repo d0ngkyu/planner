@@ -14,6 +14,8 @@ export const ICONS = {
   moon:     { name: '달', emoji: '🌙', bg: ['#262f5a', '#4a5699'] },
   target:   { name: '과녁', emoji: '🎯', bg: ['#b8323f', '#e0606c'] },
   diamond:  { name: '다이아몬드', emoji: '💎', bg: ['#2b7a8c', '#6fd0dd'] },
+  bolt:     { name: '번개', emoji: '⚡', bg: ['#3a3f9e', '#7b6ff0'] },
+  leaf:     { name: '네잎클로버', emoji: '🍀', bg: ['#2f8a63', '#8fd18a'] },
   crown:    { name: '왕관', emoji: '👑', bg: ['#7a4fc2', '#e1b13c'] },
 };
 // light/dark 각각의 강조색
@@ -24,6 +26,7 @@ export const THEMES = {
   lavender: { name: '라벤더', light: '#7650c0', dark: '#ab8cec' },
   rose:     { name: '장미', light: '#c23b62', dark: '#ec7d9b' },
   midnight: { name: '한밤', light: '#26335f', dark: '#8ea2e6' },
+  mint:     { name: '민트', light: '#1f8a7a', dark: '#5fd1c0' },
   gold:     { name: '황금', light: '#a87412', dark: '#e3b44a' },
 };
 
@@ -54,6 +57,11 @@ export const ACHIEVEMENTS = [
   A('early10', '생활', '오전 9시 전 할 일 10번 완료', 'early', 10, { title: '아침형 인간', icon: 'sunrise' }),
   A('memo7', '생활', '메모 7번 쓰기', 'memos', 7, { title: '기록하는 사람' }),
   A('memo30', '생활', '메모 30번 쓰기', 'memos', 30, { icon: 'feather' }),
+  A('focus1', '집중', '집중 1시간', 'focusHours', 1, { title: '몰입 입문' }),
+  A('focus10', '집중', '집중 10시간', 'focusHours', 10, { title: '몰입의 달인', icon: 'bolt' }),
+  A('focus50', '집중', '집중 50시간', 'focusHours', 50, { title: '딥워커' }),
+  A('mood7', '생활', '컨디션 7번 기록', 'moods', 7, { title: '나를 돌보는 사람' }),
+  A('mood30', '생활', '컨디션 30번 기록', 'moods', 30, { theme: 'mint', icon: 'leaf' }),
   A('goal5', '목표', '목표 5개 달성', 'goals', 5, { title: '목표 사냥꾼' }),
   A('goal30', '목표', '목표 30개 달성', 'goals', 30, { title: '꿈을 이루는 사람' }),
 ];
@@ -69,7 +77,7 @@ export const minutesOf = (it) => {
 export function computeStats(records, today) {
   const all = Object.values(records).filter((r) => !r.deleted);
   const items = all.filter((r) => r.kind === 'item');
-  const s = { done: 0, tasks: 0, events: 0, hours: 0, perfect: 0, early: 0, memos: 0, goals: 0, streak: 0, bestStreak: 0 };
+  const s = { focusHours: 0, moods: 0, done: 0, tasks: 0, events: 0, hours: 0, perfect: 0, early: 0, memos: 0, goals: 0, streak: 0, bestStreak: 0 };
   const doneDays = new Set();
   let first = today;
   for (const it of items) {
@@ -93,6 +101,9 @@ export function computeStats(records, today) {
   s.hours = Math.floor(s.hours / 60);
   s.memos = all.filter((r) => r.kind === 'note' && (r.text || '').trim()).length;
   s.goals = all.filter((r) => r.kind === 'goal' && r.done).length;
+  s.focusMin = all.filter((r) => r.kind === 'focus' && r.date <= today).reduce((a, f) => a + (f.minutes || 0), 0);
+  s.focusHours = Math.floor(s.focusMin / 60);
+  s.moods = all.filter((r) => r.kind === 'mood').length;
 
   // 완벽한 날 / 연속 (최대 400일 전까지)
   const tasks = items.filter((i) => i.type === 'task');
@@ -113,7 +124,7 @@ export function progress(stats) {
 
 // 경험치/레벨 (보는 재미용)
 export function level(stats) {
-  const xp = stats.done * 10 + stats.tasks * 2 + stats.events * 2 + stats.perfect * 30 + stats.goals * 20 + stats.memos * 5 + stats.bestStreak * 15;
+  const xp = stats.done * 10 + stats.tasks * 2 + stats.events * 2 + stats.perfect * 30 + stats.goals * 20 + stats.memos * 5 + stats.bestStreak * 15 + Math.floor((stats.focusMin || 0) / 5) + (stats.moods || 0) * 5;
   const lv = Math.floor(Math.sqrt(xp / 60)) + 1;
   const cur = 60 * (lv - 1) ** 2, next = 60 * lv ** 2;
   return { xp, lv, pct: (xp - cur) / (next - cur) };
