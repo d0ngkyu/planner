@@ -1,12 +1,12 @@
 {
-  "version": "0.1.1",
-  "versionCode": 2,
+  "version": "0.2.0",
+  "versionCode": 3,
   "applicationId": "io.github.d0ngkyu.planner",
   "minAndroid": "7.0",
-  "apk": "planner-0.1.1.apk",
-  "sha256": "9b50cbf04a8f59ddc046e33b2a8e5d3670511efbfc3d3bf1219380b4af71c244",
+  "apk": "planner-0.2.0.apk",
+  "sha256": "240b1e30551c90a9e7b72d945b20fc0b519de250eea42eba58ecfc0c1dacdc46",
   "certificateSha256": "8197dcd546b9e42c683f51455c46e477858d9a6278fa478074a1f5cdbab4d908",
-  "sourceCommit": "f3b96ff44a8d804f5935cfa1d5dc166f460998e3",
-  "buildRun": "https://github.com/d0ngkyu/planner/actions/runs/44019274321",
+  "sourceCommit": "38c6fa9d9870f55e53eb1455140e2b52c0210525",
+  "buildRun": "https://github.com/d0ngkyu/planner/actions/runs/44023238076",
   "deviceTested": false
 }

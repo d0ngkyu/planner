@@ -24,9 +24,10 @@
       <button class="chip" id="todayBtn">오늘</button>
     </div>
     <nav class="views" id="views" role="tablist">
-      <button data-view="day" role="tab">일</button>
-      <button data-view="week" role="tab">주</button>
-      <button data-view="month" role="tab">월</button>
+      <button data-view="day" role="tab">오늘</button>
+      <button data-view="week" role="tab">주간</button>
+      <button data-view="month" role="tab">달력</button>
+      <button data-view="inbox" role="tab">보관함</button>
       <button data-view="stats" role="tab">기록</button>
     </nav>
     <button class="me" id="meBtn" aria-label="업적">
@@ -40,6 +41,7 @@
     </div>
   </header>
   <button class="focus-pill" id="focusPill" hidden></button>
+  <div class="category-picker" id="quickCategories" aria-label="추가할 카테고리"></div>
   <main id="main"></main>
   <form class="quick-dock" id="quickDock">
     <button type="button" id="fab" class="dock-detail" aria-label="새 항목 상세 입력">＋</button>
@@ -57,7 +59,9 @@
       </div>
       <button type="button" class="icon" data-close aria-label="닫기">✕</button>
     </div>
+    <div class="category-picker" id="editCategories" aria-label="카테고리"></div>
     <input name="title" class="title-input" placeholder="제목" autocomplete="off" required>
+    <label class="toggle"><input type="checkbox" name="inbox"> 날짜 미정 · 보관함에 넣기</label>
     <div class="row3">
       <label>날짜<input type="date" name="date" required></label>
       <label>시작<input type="time" name="time"></label>
@@ -79,7 +83,8 @@
     </div>
     <label class="until">반복 종료일 (비우면 계속)<input type="date" name="until"></label>
     <div class="swatches" id="swatches"></div>
-    <textarea name="note" rows="3" placeholder="메모"></textarea>
+    <section id="categoryFields" class="category-fields"></section>
+    <textarea name="note" rows="3" placeholder="추가 메모"></textarea>
     <div class="task-acts" id="taskActs">
       <button type="button" id="focusBtn">⏱ 집중 시작</button>
       <button type="button" id="postponeBtn">↷ 내일로</button>
@@ -91,6 +96,16 @@
   </form>
 </dialog>
 
+<dialog id="authDlg" class="sheet">
+  <form id="authForm">
+    <div class="sheet-head"><h2>폰 · PC 연결</h2><button type="button" data-close aria-label="닫기">✕</button></div>
+    <p>두 기기에서 같은 이메일 계정으로 로그인하세요. 처음 로그인하면 이 기기의 기록이 계정에 합쳐집니다.</p>
+    <label>이메일<input name="email" type="email" autocomplete="username" required></label>
+    <label>비밀번호<input name="password" type="password" autocomplete="current-password" minlength="6" required></label>
+    <p id="authMessage" role="status"></p>
+    <div class="row-btns"><button class="primary" type="submit">로그인</button><button type="submit" name="register" value="yes">처음 연결 · 가입</button><button type="button" id="resetPassword">비밀번호 재설정</button></div>
+  </form>
+</dialog>
 <dialog id="searchDlg" class="sheet">
   <div class="sheet-head"><input id="q" placeholder="할 일·일정·메모 검색" autocomplete="off"><button type="button" class="icon" data-close>✕</button></div>
   <ul id="results" class="results"></ul>
@@ -117,6 +132,8 @@
   </section>
   <section class="set">
     <h3>화면</h3>
+    <button id="achSettings">업적 · 보상 보기</button>
+    <label>글자 크기<select id="fontSize"><option value="normal">기본</option><option value="large">크게</option></select></label>
     <div class="seg" id="themeSeg">
       <button data-theme="system">자동</button><button data-theme="light">밝게</button><button data-theme="dark">어둡게</button>
     </div>
