@@ -615,3 +615,15 @@ summary { cursor:pointer; padding:12px 4px; min-height:44px; color:var(--muted);
 .companion-preview { display:flex; align-items:center; gap:12px; margin:12px 0; color:var(--muted); font-size:12px; }
 .companion-preview svg { width:32px; }
 :root[data-font-size="large"] .piece-text,:root[data-font-size="large"] .inspiration-entry p { font-size:18px; }
+/* A single aligned piece: content column, attribution, three equal actions. */
+.piece-card { padding:20px 20px 0; border:1px solid var(--line); border-radius:12px; background:var(--card); }
+.piece-heading { margin:0 0 12px; font-size:12px; line-height:1.5; letter-spacing:0; }
+.piece-text { font-size:16px; line-height:1.75; letter-spacing:-.02em; word-break:keep-all; overflow-wrap:anywhere; padding:0; }
+#pieceSource { display:block; width:100%; min-height:44px; padding:8px 0 12px; font-size:11px; line-height:1.5; }
+.piece-actions { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:0; margin:0; border-top:1px solid var(--line); }
+.piece-actions button,#openInspiration { width:100%; min-height:48px; padding:0 8px; gap:7px; font-size:12px; border-radius:0; justify-content:center; }
+.piece-actions svg { width:16px; height:16px; }
+.piece-actions button:hover { background:var(--soft); }
+.piece-actions button[aria-pressed="true"] { font-weight:500; }
+#openInspiration span { font-size:11px; }
+@media(max-width:480px) { .piece-card { padding:16px 16px 0; }.piece-heading { margin-bottom:10px; } }
