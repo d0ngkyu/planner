@@ -8,10 +8,12 @@ import { planNotifications } from './schedule.js';
 
 const SETTINGS = 'planner.native.notifications.v1';
 const PlannerWidget = registerPlugin('PlannerWidget');
+const PlannerCompanion = registerPlugin('PlannerCompanion');
 const read = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } };
 let granted = false;
 let queue = Promise.resolve();
 const native = globalThis.plannerNative = {
+  async companion(options) { return PlannerCompanion.update(options); },
   async updateWidget(records) { await PlannerWidget.update({ data: JSON.stringify(widgetSnapshot(records)) }); },
   get granted() { return granted; },
   get settings() { return read(SETTINGS, { morning: '08:00', evening: '21:00', nag: false }); },

@@ -86,7 +86,7 @@ export function search(records, q) {
   if (!q) return [];
   return Object.values(records)
     
-    .filter((r) => ['item', 'note', 'goal'].includes(r.kind))
+    .filter((r) => ['item', 'note', 'goal', 'inspiration'].includes(r.kind))
     .filter((r) => !r.deleted && ((r.title || '') + ' ' + (r.note || '') + ' ' + (r.text || '') + ' ' + JSON.stringify(r.categoryDetails || {})).toLowerCase().includes(q))
     .sort((a, b) => (b.date || b.scope || b.id).localeCompare(a.date || a.scope || a.id))
     .slice(0, 100);
@@ -123,7 +123,8 @@ export function compact(records, now = Date.now()) {
 export function validateImport(data) {
   if (!data || typeof data !== 'object' || typeof data.records !== 'object') throw new Error('플래너 백업 파일이 아닙니다');
   for (const r of Object.values(data.records)) {
-    if (!r || typeof r.id !== 'string' || typeof r.updatedAt !== 'number' || !['item', 'note', 'goal', 'profile', 'routine', 'focus', 'mood'].includes(r.kind)) throw new Error('손상된 항목이 있습니다');
+    if (!r || typeof r.id !== 'string' || typeof r.updatedAt !== 'number' || !['item', 'note', 'goal', 'profile', 'routine', 'focus', 'mood', 'inspiration'].includes(r.kind)) throw new Error('손상된 항목이 있습니다');
+    if(r.kind === 'inspiration' && (typeof r.pieceId !== 'string' || typeof r.text !== 'string' || typeof r.mood !== 'string' || typeof r.sub !== 'string')) throw new Error('손상된 영감 기록이 있습니다');
   }
   return data.records;
 }

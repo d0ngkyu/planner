@@ -41,6 +41,7 @@
     </div>
   </header>
   <button class="focus-pill" id="focusPill" hidden></button>
+  <div id="inspirationHost"></div>
   <div class="category-picker" id="quickCategories" aria-label="추가할 카테고리"></div>
   <main id="main"></main>
   <form class="quick-dock" id="quickDock">
@@ -132,6 +133,10 @@
   </section>
   <section class="set">
     <h3>화면</h3>
+    <button id="inspirationSettings">저장한 한 조각 · 영감함</button>
+    <div id="companionPreview" class="companion-preview"></div>
+    <label class="toggle"><input type="checkbox" id="dynamicIcon"> 캐릭터 아이콘 자동 변경</label>
+    <p class="muted small" id="dynamicIconNote"></p>
     <button id="achSettings">업적 · 보상 보기</button>
     <label>글자 크기<select id="fontSize"><option value="normal">기본</option><option value="large">크게</option></select></label>
     <div class="seg" id="themeSeg">
@@ -169,6 +174,14 @@
   <div id="focusBody"></div>
 </dialog>
 
+<dialog id="inspirationDlg" class="sheet wide">
+  <div class="sheet-head"><h2>나의 영감함</h2><button type="button" class="icon" data-close aria-label="닫기">✕</button></div>
+  <div id="inspirationBody"></div>
+</dialog>
+<dialog id="pieceDetailDlg" class="sheet">
+  <div class="sheet-head"><h2>한 조각 더 깊이</h2><button type="button" class="icon" data-close aria-label="닫기">✕</button></div>
+  <div id="pieceDetailBody"></div>
+</dialog>
 <div id="fx" class="fx" aria-hidden="true"></div>
 <div id="toast" class="toast" role="status"></div>
 <script type="module" src="app.js"></script>

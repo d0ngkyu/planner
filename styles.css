@@ -583,3 +583,47 @@ summary { cursor:pointer; padding:12px 4px; min-height:44px; color:var(--muted);
 .dial-schedule button[aria-pressed="true"] { background:var(--soft); }
 @media(max-width:720px) { .dial-card { padding:14px; } .dial-heading h2 { font-size:18px; } .dial-heading .small { font-size:11px; } }
 .dial-detail { scroll-margin-top:140px; scroll-margin-bottom:calc(190px + var(--safe-b)); }
+/* Inspiration: quiet typography, no nested decorative cards. */
+#inspirationHost { max-width:760px; margin:8px auto 20px; }
+.piece-card { padding:18px 4px 8px; border-bottom:1px solid var(--line); }
+.piece-heading { font-size:11px; font-weight:500; color:var(--muted); letter-spacing:.04em; margin-bottom:8px; }
+.piece-text { display:block; width:100%; text-align:left; line-height:1.75; font-size:16px; font-weight:400; padding:0; overflow-wrap:anywhere; letter-spacing:-.025em; }
+.piece-bottom { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:8px; }
+#pieceSource { color:var(--muted); font-size:11px; text-align:left; padding-right:8px; }
+.piece-actions { display:flex; align-items:center; gap:0; flex-shrink:0; }
+.piece-actions button { min-width:44px; min-height:44px; display:flex; align-items:center; justify-content:center; color:var(--muted); background:none; border-radius:8px; }
+.piece-actions svg { width:19px; height:19px; fill:none; stroke:currentColor; stroke-width:1.4; stroke-linecap:round; stroke-linejoin:round; }
+.piece-actions button[aria-pressed="true"] { color:var(--accent); }
+.piece-actions button[aria-pressed="true"] svg { fill:var(--accent); }
+#openInspiration { font-size:12px; padding:0 6px 0 12px; gap:5px; }
+#openInspiration span { font-size:10px; }
+.piece-actions button:hover,#pieceSource:hover { color:var(--ink); }
+.inspiration-filters { display:flex; gap:4px; flex-wrap:wrap; margin:20px 0; border-bottom:1px solid var(--line); }
+.inspiration-filters button { padding:8px 12px; font-size:13px; color:var(--muted); border-bottom:2px solid transparent; }
+.inspiration-filters button[aria-pressed="true"] { color:var(--ink); border-bottom-color:var(--ink); }
+.inspiration-group { padding-top:8px; margin:28px 0; }
+.inspiration-group h3 { font-size:18px; font-weight:600; margin:10px 0; }
+.inspiration-sub { margin-bottom:24px; }.inspiration-sub summary { font-weight:500; font-size:13px; color:var(--muted); }
+.inspiration-entry { padding:18px 0; border-bottom:1px solid var(--line); overflow-wrap:anywhere; }
+.inspiration-entry p,#pieceDetailBody p { white-space:pre-wrap; font-size:16px; line-height:1.85; margin:8px 0 12px; letter-spacing:-.02em; }
+.piece-kind { font-size:11px; color:var(--muted); }.piece-source { display:block; font-size:11px; color:var(--muted); line-height:1.7; }
+.piece-source a { color:var(--muted); text-underline-offset:3px; }
+.inspiration-entry button { padding:8px 0; color:var(--accent); font-size:12px; margin-top:4px; }
+.inspiration-sub h4 { margin:28px 0 0; font-size:12px; font-weight:500; color:var(--muted); }
+.piece-previous { margin-top:20px; font-size:13px; color:var(--muted); }
+.companion-svg { display:block; width:100%; }
+.companion-preview { display:flex; align-items:center; gap:12px; margin:12px 0; color:var(--muted); font-size:12px; }
+.companion-preview svg { width:32px; }
+:root[data-font-size="large"] .piece-text,:root[data-font-size="large"] .inspiration-entry p { font-size:18px; }
+/* A single aligned piece: content column, attribution, three equal actions. */
+.piece-card { padding:20px 20px 0; border:1px solid var(--line); border-radius:12px; background:var(--card); }
+.piece-heading { margin:0 0 12px; font-size:12px; line-height:1.5; letter-spacing:0; }
+.piece-text { font-size:16px; line-height:1.75; letter-spacing:-.02em; word-break:keep-all; overflow-wrap:anywhere; padding:0; }
+#pieceSource { display:block; width:100%; min-height:44px; padding:8px 0 12px; font-size:11px; line-height:1.5; }
+.piece-actions { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:0; margin:0; border-top:1px solid var(--line); }
+.piece-actions button,#openInspiration { width:100%; min-height:48px; padding:0 8px; gap:7px; font-size:12px; border-radius:0; justify-content:center; }
+.piece-actions svg { width:16px; height:16px; }
+.piece-actions button:hover { background:var(--soft); }
+.piece-actions button[aria-pressed="true"] { font-weight:500; }
+#openInspiration span { font-size:11px; }
+@media(max-width:480px) { .piece-card { padding:16px 16px 0; }.piece-heading { margin-bottom:10px; } }
