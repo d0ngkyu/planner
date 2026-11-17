@@ -65,3 +65,9 @@
 - 서명 APK 앱 소스 df08bd8, 빌드 Actions44014961176 성공. 포함된6개 web asset 대조: Windows/Linux CRLF만 정규화한 텍스트 일치, PNG 해시 일치. 첫 Pages 확인은 GitHub 오류 페이지 반환, 배포 성공 후 재조회로 해소.
 - 설치 파일/소스 원격 보관 완료. 실제 폰 설치·알림 수신은 미확인. 다음: 사용자 폰 설치 확인 → Firebase Android 동기화 연결 → 기능/디자인 점진 개선. 새 기능을 임의로 착수하지 않음.
 - Codex 게시 잠금 해제. 후속 작업자는 TASKS/열린 PR 확인 후 소유를 기록할 것. 키 로컬 보관이며 원격 키 백업 아님(ANDROID.md). 협업 허브 PR3 등록 및 원격 요약 재조회 확인.
+
+## SOLO-CALM-007 · Codex · 진행 중 · 2026-11-17
+- 사용자 승인: Gemini가 제안한 1인용 미니멀 디자인을 Codex가 직접 적용·검증·APK 업데이트까지 수행. Gemini CLI 설치 요청이 아님.
+- 최신 결정: Gemini 협업 제외, Codex·Claude 운영. 기존 기여/이력 보존. ZIP 원본은 이 세션에 없으므로 전달된 요구사항을 기준으로 구현하며 원본 ZIP 적용이라고 주장하지 않음.
+- 기준 main099d382, 열린 PR0 확인. 브랜치 codex/solo-calm-007, 소유 styles.css/index.html/app.js의 디자인·빠른 입력·미연결 표시, 캐시/Android 버전/검증·기록. 배포 담당 Codex 인수.
+- 범위: 라이트 #FAF9F6 / 다크 #141517 / 세이지 #3B6E5C, 하단 빠른 입력, 터치44px, 눌림·체크 애니메이션, 미연결 표시. 기존 데이터 모델/기능 보존. 0.1.1 versionCode2/웹v6 예정.
