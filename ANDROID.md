@@ -1,0 +1,37 @@
+# Android 앱 0.1.0
+
+기존 플래너를 Capacitor 8로 패키징한다. 앱 ID `io.github.d0ngkyu.planner`, Android 7 이상. 화면/데이터 모델은 웹과 공유하고 기능·디자인 확장은 후속으로 진행한다.
+
+## 사용
+- APK를 설치하면 앱 안에 포함된 플래너가 인터넷 없이 열린다. PC 웹은 기존 Pages 주소를 사용한다.
+- 웹과 앱은 저장 공간이 다르다. 웹 설정 → 내보내기(.json) → 앱 설정 → 가져오기. 앱 내보내기는 휴대폰 공유 창에서 파일을 저장/전달한다. 가져오기는 기존 데이터와 병합한다.
+- 알림은 설정에서 허용한다. 일정·아침/밤 체크인·집중 완료를 휴대폰에 예약하며 Firebase/결제 없이 동작한다. 기기 절전·강제 종료·알림 차단에 따라 지연/누락될 수 있으며 실기기 확인이 필요하다.
+- 앞으로 30일 중 빠른 순서 최대 400건을 예약하고 수정/앱 복귀 때 갱신한다. 장기간 앱을 열지 않으면 이후 일정은 예약되지 않는다. 집중 알림은 별도 예약한다.
+- 아침/밤은 일반적인 확인 안내다. 앱이 닫힌 동안 남은 일 판정에 따른 밤 재알림은 아직 연결하지 않았다. 해당 옵션은 앱에서 비활성 표시한다.
+- Firebase Android Google 로그인·폰/PC 동기화는 후속 작업이다. 웹용 팝업 로그인을 WebView에서 실행하지 않는다. 앱의 로그인 버튼은 연결 전까지 숨긴다.
+
+## 개발/검증
+Node 24, pnpm 11.25.0, JDK 21, Android SDK 36.
+
+```sh
+pnpm install --frozen-lockfile
+pnpm test
+pnpm mobile:sync
+cd android
+./gradlew assembleRelease lintRelease
+```
+
+GitHub Actions `Android APK`는 unsigned release APK를 30일 artifact로 보관한다. **unsigned 파일은 바로 설치할 수 없다.** 사용자에게는 별도로 서명·검증한 APK만 제공한다. `www`와 복사된 Android assets는 생성물이며 소스 수정 뒤 항상 mobile:sync한다.
+
+`scripts/smoke-browser.mjs`는 별도 Playwright 설치 또는 PLAYWRIGHT_MODULE/CHROME_PATH 환경변수로 실행한다. 390/1360px 웹·네이티브 어댑터 모의 화면에서 생성/새로고침/뷰 전환/백업 공유 인자를 검사한다. Android WebView/실제 알림 시험을 대신하지 않는다.
+
+## 업데이트 서명
+릴리스 APK는 동일한 개인 서명 키와 증가하는 versionCode로 갱신해야 기존 데이터가 유지된다. 키를 새로 만들거나 앱 삭제를 업데이트 방법으로 안내하지 않는다.
+
+- 서명 소스: `scripts/SignApk.java`, Google `apksig` 8.13.0. 키 비밀번호는 프로세스 환경변수 `PLANNER_KEY_PASSWORD`로만 전달한다.
+- 현재 키는 이 작업 PC의 무시된 `.tools/signing/planner.p12`, 암호는 동일 사용자의 Windows DPAPI 파일 `password.dpapi`에 저장한다. Git에 키/암호를 넣지 않는다.
+- 이는 **로컬 보관**이며 원격 키 백업은 아니다. 새 기기/PC 초기화 전 별도 안전한 키 복구 방식을 준비해야 한다. 현재 키를 잃으면 동일 앱으로 업데이트하지 못한다.
+- APK 서명 검증과 SHA256, 빌드 source/run은 TASKS/다운로드 manifest에 기록한다.
+
+## 남은 실기기 확인
+설치 → 할 일 저장/재실행 → 뒤로가기 → JSON 가져오기/내보내기 → 앱을 닫고 테스트·일정·집중 알림 수신 → 알림 누르면 해당 날짜 열기 → 재부팅 후 예약 유지. 이후 Firebase Android 로그인과 동기화를 연결한다.

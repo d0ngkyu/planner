@@ -2,8 +2,8 @@
 
 | 항목 | 값 |
 |---|---|
-| 배포 담당 | Claude (2026-11-17~, 다음 작업자는 이 칸 확인 후 인수 기록) |
-| 현재 버전 | sw `planner-v4` — main 반영 |
+| 배포 담당 | Codex (ANDROID-006 앱 패키징 인수, 2026-11-17) |
+| 현재 버전 | 웹 sw `planner-v5` / Android 0.1.0 (versionCode 1) — ANDROID-006 검증 후 게시 진행 |
 
 ## PLANNER-001 · 첫 버전 (2026-11-17, Claude) — 완료(로컬)
 - 요청: 모바일/PC 공동 사용 일·주·월 플래너. 사용자 결정: GitHub 새 프로젝트, 본인 혼자 기기 간 동기화.
@@ -41,3 +41,20 @@
 ## 다음 후보
 - PLANNER-002: GitHub Pages 배포 + Firebase 연결 후 폰·PC 실제 동기화 확인
 - 구글 캘린더 가져오기, 같은 날 안에서 순서 드래그, 루틴 자동 반복 넣기
+
+## ANDROID-006 · Android 설치 앱 · Codex · 진행 중 (2026-11-17)
+- 사용자 결정: 기존 기능/디자인을 유지하는 Android 앱으로 전환, 기능·디자인 개선은 후속으로 천천히 진행.
+- 기준 main c3ac08f, 열린 PR 없음 확인. REPO-005는 설정 인계 상태이며 실행 중 배포 기록 없음. 이번 앱 패키징 담당 Codex 인수.
+- 소유: Android 프로젝트/패키징/필수 네이티브 어댑터/관련 테스트·문서. 기존 데이터 모델 유지. 브랜치 codex/android-006.
+- Pages 주소 HTTP 200 및 플래너 HTML 직접 확인(이전 세션). Firebase 연결/실기기 검증 미완료 유지.
+- 계획: Capacitor 기반 로컬 번들 APK, 백업/뒤로가기/알림 호환 확인, 빌드와 회귀 테스트 후 PR. 서명 키·자격증명은 저장소에 올리지 않음.
+
+### ANDROID-006 검증 및 게시 인수
+- APK 소스 df08bd801d98e402c305479df954ec669c1e1c1d, release 0.1.0/versionCode1, 담당 Codex. PR1. 기능/디자인 확장 없이 기존 화면과 모델을 공유. 번들 로딩, 네이티브 뒤로가기·JSON 공유·일정/집중/아침/밤 일반 알림 연결.
+- 직접 검증: 기존33개 테스트 + 모바일12 assertions 통과. Playwright 실제 Chromium 390/1360px 웹 및 네이티브 어댑터 **모의**에서 생성/재실행 보존/뷰 전환/설정/백업 인자 확인, JS 오류0. APK 실기기 시험과 구분.
+- Actions44014961176: pnpm 설치/전체검사/mobile:sync/assembleRelease/lintRelease 성공. unsigned artifact ZIP SHA256 cbc47bba892739c3f7e252a6482fdbece244aa4c4874cdfa442683649f594db6 직접 대조.
+- 로컬 개인 키로 APK v2/v3 서명·검증 성공. APK SHA256 3d77ad348f62e6fb9a584616dc7ed12a9b856e0ae606280eddc11e688d62dd45, 공개 인증서 SHA256 8197dcd546b9e42c683f51455c46e477858d9a6278fa478074a1f5cdbab4d908. 키/암호는 무시된 .tools/signing에만 저장(암호 DPAPI), 원격 키 백업 아님. 동일 키/상승 versionCode로 업데이트할 것.
+- 확인된 실패/해결: 샌드박스 DNS/localhost/패키지 캐시 제한은 승인된 범위 재실행으로 통과. 첫 서명에서 DPAPI 텍스트 끝 개행 파싱 실패 → Trim 처리 후 동일 키로 서명 검증 성공. 키 교체/데이터 삭제 없음.
+- 남은 한계: Android 실제 설치/백그라운드 수신/재부팅/파일 선택 실기기 확인 필요. 예약은 앞으로30일 최대400건, 수정/실행 때 갱신. Android Firebase 로그인/동기화와 조건부 밤 재알림은 미연결. 웹 Google 로그인 코드 보존.
+- 게시 대상 downloads/planner-0.1.0.apk 및 설치 안내 /downloads/. APK/웹 변경은 이 작업자가 PR1 병합 후 Pages와 실제 파일 해시를 재확인. 아직 게시 완료/폰 적용으로 기록하지 않음.
+- ai-collaboration PR3 병합 9f4a732, projects/planner.md 원격 재조회 확인. 등록 누락 해결, 다른 AI 열람/동의 확인을 뜻하지 않음.

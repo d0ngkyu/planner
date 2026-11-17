@@ -4,6 +4,7 @@ import * as ACH from './achievements.js';
 import * as X from './extras.js';
 import { enableDrag } from './drag.js';
 import { createTimer } from './timer.js';
+import { native } from './platform.js';
 
 const KEY = 'planner.records.v1';
 const UIKEY = 'planner.ui.v1';
@@ -19,7 +20,10 @@ ui.date = S.today(); // 열 때는 항상 오늘부터
 function safeJSON(s) { try { return JSON.parse(s); } catch { return null; } }
 function load() { return safeJSON(localStorage.getItem(KEY)) || {}; }
 let saveTimer;
-function persist() { clearTimeout(saveTimer); saveTimer = setTimeout(() => localStorage.setItem(KEY, JSON.stringify(records)), 150); }
+function flushRecords() { clearTimeout(saveTimer); localStorage.setItem(KEY, JSON.stringify(records)); }
+function persist() { clearTimeout(saveTimer); saveTimer = setTimeout(() => { flushRecords(); native?.reschedule().catch((e) => toast('알림 예약 실패: ' + e.message)); }, 150); }
+window.addEventListener('planner-flush', flushRecords);
+window.addEventListener('pagehide', flushRecords);
 function saveUI() { localStorage.setItem(UIKEY, JSON.stringify({ view: ui.view, theme: ui.theme })); }
 
 // ---------- 동기화 ----------
@@ -226,6 +230,7 @@ function renderSync() {
   const [cls, txt] = map[s.state] || map.off;
   dot.className = 'sync-dot ' + cls; dot.title = txt;
   $('#syncText').textContent = sync.enabled ? (s.email ? `${s.email} · ${txt}` : txt) : '동기화가 아직 설정되지 않아 이 기기에만 저장됩니다. README의 "동기화 켜기"를 따라 Firebase 설정을 넣으면 폰·PC가 같은 데이터를 씁니다.';
+  if (native) $('#syncText').textContent = '현재 이 휴대폰에 저장됩니다. 폰·PC 동기화는 추후 연결합니다. 기존 웹 데이터는 JSON 백업 파일로 가져올 수 있어요.';
   const btn = $('#authBtn');
   btn.hidden = !sync.enabled;
   btn.textContent = s.email ? '로그아웃' : 'Google로 로그인';
@@ -401,6 +406,19 @@ $('#results').onclick = (e) => {
 $('#settingsBtn').onclick = () => { renderSync(); renderPush(); syncTheme(); $('#settingsDlg').showModal(); };
 $('#authBtn').onclick = async () => { try { syncState.email ? await sync.signOut() : await sync.signIn(); } catch (e) { toast('로그인 실패: ' + (e.code || e.message)); } };
 function renderPush() {
+  if (native) {
+    const st = native.settings;
+    $('#pushText').textContent = native.granted
+      ? '휴대폰 알림 사용 중 · 앞으로 30일/최대 400건을 예약하고 앱을 열면 갱신해요. 절전 상태에서는 늦을 수 있어요.'
+      : '로그인 없이 휴대폰에 일정·집중 완료 알림을 예약해요. 알림 권한을 허용해 주세요.';
+    $('#pushBtn').textContent = native.granted ? '알림 다시 연결' : '이 기기에서 알림 켜기';
+    ['#pushBtn', '#pingBtn', '#morningAt', '#eveningAt'].forEach((q) => { $(q).disabled = false; });
+    if (document.activeElement !== $('#morningAt')) $('#morningAt').value = st.morning;
+    if (document.activeElement !== $('#eveningAt')) $('#eveningAt').value = st.evening;
+    $('#nagOn').checked = false; $('#nagOn').disabled = true;
+    $('#nagOn').closest('label').title = '앱 버전의 조건부 밤 재알림은 추후 연결합니다.';
+    return;
+  }
   const ok = sync.pushSupported(), on = !!localStorage.getItem('planner.pushDevice') && typeof Notification !== 'undefined' && Notification.permission === 'granted';
   const st = pushSettings || {};
   $('#pushText').textContent = !sync.enabled || !ok ? '알림은 동기화(Firebase) 설정과 웹 푸시 키를 넣은 뒤 쓸 수 있어요 (README "알림 켜기").'
@@ -414,23 +432,28 @@ function renderPush() {
   $('#nagOn').checked = st.nag !== false;
 }
 const saveCheckin = async () => {
-  try { await sync.saveSettings({ morning: $('#morningAt').value, evening: $('#eveningAt').value, nag: $('#nagOn').checked }); toast('알림 시간을 저장했어요'); }
+  try { const settings = { morning: $('#morningAt').value, evening: $('#eveningAt').value, nag: $('#nagOn').checked }; await (native ? native.saveSettings(settings) : sync.saveSettings(settings)); toast('알림 시간을 저장했어요'); }
   catch (e) { toast(e.message); }
 };
 $('#morningAt').onchange = saveCheckin; $('#eveningAt').onchange = saveCheckin; $('#nagOn').onchange = saveCheckin;
 $('#pushBtn').onclick = async () => {
-  try { await sync.enablePush(); if (!pushSettings) await saveCheckin(); toast('알림을 켰어요. "테스트 알림"으로 확인해 보세요'); }
+  try { flushRecords(); await (native ? native.enable() : sync.enablePush()); if (!native && !pushSettings) await saveCheckin(); toast('알림을 켰어요. "테스트 알림"으로 확인해 보세요'); }
   catch (e) { toast(e.message); }
   renderPush();
 };
-$('#pingBtn').onclick = async () => { try { await sync.ping(); toast('테스트 알림을 보냈어요 (몇 초 걸릴 수 있어요)'); } catch (e) { toast(e.message); } };
+$('#pingBtn').onclick = async () => { try { await (native ? native.ping() : sync.ping()); renderPush(); toast('테스트 알림을 보냈어요 (몇 초 걸릴 수 있어요)'); } catch (e) { toast(e.message); } };
 
 $('#themeSeg').onclick = (e) => { const b = e.target.closest('button'); if (b) { ui.theme = b.dataset.theme; saveUI(); syncTheme(); } };
 function syncTheme() {
   document.documentElement.dataset.theme = ui.theme; lastCos = ''; if (typeof renderMe === 'function' && stats) renderMe();
   document.querySelectorAll('#themeSeg button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.theme === ui.theme));
 }
-$('#exportBtn').onclick = () => {
+$('#exportBtn').onclick = async () => {
+  if (native) {
+    try { await native.exportBackup(JSON.stringify({ app: 'planner', version: 1, exportedAt: new Date().toISOString(), records }, null, 1), `planner-${S.today()}.json`); }
+    catch (e) { toast('백업 공유를 완료하지 못했어요: ' + e.message); }
+    return;
+  }
   const blob = new Blob([JSON.stringify({ app: 'planner', version: 1, exportedAt: new Date().toISOString(), records }, null, 1)], { type: 'application/json' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `planner-${S.today()}.json`; a.click(); URL.revokeObjectURL(a.href);
 };
@@ -646,12 +669,12 @@ const timer = createTimer({
     const ring = $('#focusRing'); if (ring && st) { ring.style.strokeDashoffset = String(2 * Math.PI * 88 * (1 - left / st.total)); $('#focusTime').textContent = mmss(left); }
     document.title = st && !st.paused ? `${mmss(left)} · 플래너` : '플래너';
   },
-  onChange(st) { if (!st) { $('#focusPill').hidden = true; document.title = '플래너'; } if ($('#focusDlg').open) renderFocus(); },
+  onChange(st) { native?.reschedule().catch((e) => toast('집중 알림 예약 실패: ' + e.message)); if (!st) { $('#focusPill').hidden = true; document.title = '플래너'; } if ($('#focusDlg').open) renderFocus(); },
   onFinish(info, minutes) {
     logFocus(info, minutes);
     focusDone = { ...info, minutes };
     navigator.vibrate?.([200, 100, 200]);
-    if (document.hidden && 'Notification' in self && Notification.permission === 'granted') navigator.serviceWorker?.ready.then((r) => r.showNotification('집중 완료 ✅', { body: `${info.title || '집중'} · ${minutes}분`, icon: 'icon-192.png', tag: 'focus' }));
+    if (!native && document.hidden && 'Notification' in self && Notification.permission === 'granted') navigator.serviceWorker?.ready.then((r) => r.showNotification('집중 완료 ✅', { body: `${info.title || '집중'} · ${minutes}분`, icon: 'icon-192.png', tag: 'focus' }));
     renderFocus(); if (!$('#focusDlg').open) $('#focusDlg').showModal();
     confetti(60);
   },
@@ -712,7 +735,8 @@ async function shareReport() {
   const newAch = ACH.ACHIEVEMENTS.filter((a) => { const ts = (p.unlocked || {})[a.id]; return ts >= from && ts < to; }).map((a) => a.name);
   const text = X.reportText(rep, { streak: st.streak, newAch });
   try {
-    if (navigator.share) await navigator.share({ title: '주간 리포트', text });
+    if (native) await native.share(text);
+    else if (navigator.share) await navigator.share({ title: '주간 리포트', text });
     else { await navigator.clipboard.writeText(text); toast('리포트를 복사했어요. 메신저에 붙여 넣으세요'); }
   } catch (e) { if (e.name !== 'AbortError') { try { await navigator.clipboard.writeText(text); toast('리포트를 복사했어요'); } catch { toast('공유하지 못했어요'); } } }
 }
@@ -726,9 +750,11 @@ function openFromUrl(href) {
   history.replaceState(null, '', location.pathname);
 }
 navigator.serviceWorker?.addEventListener('message', (e) => { if (e.data?.type === 'open') openFromUrl(e.data.url); });
+window.addEventListener('planner-open', (e) => openFromUrl(e.detail));
+window.addEventListener('planner-resume', () => { timer.resumeIfRunning(); renderPush(); });
 
 records = S.compact(records); persist();
 syncTheme(); render(); renderSync(); sync.start();
 openFromUrl(location.href);
 timer.resumeIfRunning();
-if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
+if (!native && 'serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});

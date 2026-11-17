@@ -1,2 +1,9 @@
 node_modules/
 .DS_Store
+www/
+*.jks
+*.keystore
+*.apk
+!downloads/planner-*.apk
+*.aab
+.tools/

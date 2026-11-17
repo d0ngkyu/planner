@@ -1,1 +1,21 @@
-{"type":"module","private":true,"scripts":{"test":"node tests/store.test.mjs && node tests/notify.test.mjs && node tests/achievements.test.mjs && node tests/extras.test.mjs"}}
+{
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "node tests/store.test.mjs && node tests/notify.test.mjs && node tests/achievements.test.mjs && node tests/extras.test.mjs && node tests/mobile.test.mjs",
+    "mobile:build": "node scripts/build-mobile.mjs",
+    "mobile:sync": "node scripts/build-mobile.mjs && cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.6.2",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.6.2",
+    "@capacitor/filesystem": "^8.1.5",
+    "@capacitor/local-notifications": "^8.3.1",
+    "@capacitor/share": "^8.0.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.6.2",
+    "esbuild": "^0.28.2"
+  }
+}
