@@ -1,6 +1,7 @@
 // Firebase(Firestore + Google 로그인) 동기화 어댑터. 설정이 없으면 비활성.
 // 저장 경로: users/{uid}/records/{recordId}  — 레코드 단위 last-write-wins (store.merge)
 import { firebaseConfig, vapidKey } from './firebase-config.js';
+import { native } from './platform.js';
 
 const V = '10.12.5';
 const CDN = `https://www.gstatic.com/firebasejs/${V}`;
@@ -9,7 +10,7 @@ export function createSync({ onRemote, onStatus, onSettings = () => {} }) {
   let fb = null, user = null, unsub = null, unsubMeta = null;
   const pending = new Map();
   let timer = null;
-  const enabled = !!firebaseConfig;
+  const enabled = !!firebaseConfig && !native; // Native Google sign-in needs its own OAuth integration.
 
   async function load() {
     if (fb) return fb;

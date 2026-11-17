@@ -1,0 +1,7 @@
+{
+  "appId": "io.github.d0ngkyu.planner",
+  "appName": "플래너",
+  "webDir": "www",
+  "android": { "allowMixedContent": false },
+  "plugins": { "LocalNotifications": { "smallIcon": "ic_stat_planner", "iconColor": "#2f6f5e" } }
+}

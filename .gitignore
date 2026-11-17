@@ -1,2 +1,8 @@
 node_modules/
 .DS_Store
+www/
+*.jks
+*.keystore
+*.apk
+*.aab
+.tools/
