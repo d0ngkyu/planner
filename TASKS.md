@@ -2,8 +2,8 @@
 
 | 항목 | 값 |
 |---|---|
-| 배포 담당 | Codex (DAY-DIAL-009 원판 보기 구현/검증) |
-| 현재 버전 | 웹 sw `planner-v7` / Android 0.2.0 (versionCode 3) — 게시 완료, 폰 적용 미확인 |
+| 배포 담당 | 없음 (DAY-DIAL-009 게시 완료) |
+| 현재 버전 | 웹 sw `planner-v8` / Android 0.3.0 (versionCode 4) — 게시 완료, 폰 적용 미확인 |
 
 ## DAY-DIAL-009 · Codex · 진행 · 2026-11-17
 - 승인: 24시간 원판/목록 전환, 카테고리 색, 현재시간 바늘, 선택 일정 카드, 시간없는 일은 아래 목록. 기본 원판/보기 선택 보존. Firebase 미연결 범위 유지.
@@ -129,3 +129,9 @@
 - Actions44026008032 assembleRelease/lintRelease/테스트 모두success. artifact14303515752 ZIP SHA256 153927e6af98720afecff93eb34396442c070ed3fdb72a6293c583b756a992db 대조. APK내부6asset 대조(텍스트CRLF정규화/PNG바이트) 일치.
 - 기존인증서8197dcd546b9e42c683f51455c46e477858d9a6278fa478074a1f5cdbab4d908 v2/v3 서명검증. APK SHA256 92b8cf3b171b7ef9d47adcc6d219cc27135e6cdd392675735f0363474716f16a. downloads/planner-0.3.0.apk/manifest/안내 게시 예정, 기존APK보존. 원격TASKS/PR head 재확인후 병합.
 - 허브PR9 병합fdc35c7에 작업/검증/범위 기록. Firebase null/실동기화미연결 유지. 실제폰 업데이트·원판터치·알림은 미검증, 게시와실폰적용 구분.
+
+
+### DAY-DIAL-009 · 게시 완료 · 2026-11-17
+- PR7 main병합 d939a2a91135cf1465325c86da55f90be8fd0f5e. Pages44026674930 build/deploy/report success. 공개설치페이지0.3.0/원판모듈HTTP200·swv8 확인. 공개APK재다운로드 SHA256 92b8cf3b171b7ef9d47adcc6d219cc27135e6cdd392675735f0363474716f16a 일치.
+- 설치 https://d0ngkyu.github.io/planner/downloads/ , 웹 https://d0ngkyu.github.io/planner/ . 앱소스0370af8/빌드44026008032, 기존인증서v2v3/내부6asset 대조. 기존앱 삭제없는 업데이트. 실제 사용자폰 설치/원판터치/알림 미확인.
+- 전체로직검사+원판4너비/기존웹·네이티브모의8조합 성공, 기존기능/데이터 유지. 동기화는Firebase null로미연결 유지. 다음은 실제폰사용감/원판배치 조정 또는 Firebase프로젝트정보 확보 후 연결. 게시잠금해제.
