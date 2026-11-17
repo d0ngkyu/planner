@@ -42,7 +42,37 @@ try {
     await page.locator('#dockInput').fill('14:00 빠른 입력 검사');
     await page.locator('.dock-submit').click();
     await page.getByText('빠른 입력 검사', { exact: true }).waitFor();
-    for (const view of ['week', 'month', 'stats', 'day']) {
+    await page.locator('#views [data-view=inbox]').click();
+    await page.locator('#quickCategories > [data-category=reading]').click();
+    await page.locator('#dockInput').fill('독서 보관 카드');
+    await page.locator('.dock-submit').click();
+    await page.locator('[data-edit]').filter({hasText:'수정 · 날짜 정하기'}).click();
+    await page.locator('[data-detail=content]').fill('책에서 읽은 내용');
+    await page.locator('[data-detail=reflection]').fill('나의 생각은 오래 남는다');
+    await page.locator('#editCategories [data-category=exercise]').click();
+    await page.locator('[data-detail=result]').fill('걷기 30분');
+    await page.locator('#editCategories [data-category=reading]').click();
+    assert.equal(await page.locator('[data-detail=reflection]').inputValue(),'나의 생각은 오래 남는다');
+    await page.locator('#editDlg button[type=submit]').click();
+    await page.waitForTimeout(250);
+    await page.reload();
+    assert.equal(await page.getByText('독서 보관 카드',{exact:true}).count(),0);
+    await page.locator('#views [data-view=inbox]').click();
+    await page.locator('[data-edit]').filter({hasText:'수정 · 날짜 정하기'}).click();
+    assert.equal(await page.locator('[data-detail=content]').inputValue(),'책에서 읽은 내용');
+    await page.locator('input[name=inbox]').uncheck();
+    await page.locator('#editDlg button[type=submit]').click();
+    assert.equal(await page.locator('.inbox-card').count(),0);
+    await page.locator('#views [data-view=day]').click();
+    await page.getByText('독서 보관 카드',{exact:true}).waitFor();
+    await page.locator('[data-reorder]').click();
+    const before=await page.locator('.day-layout > .card .item .tx').allTextContents();
+    await page.locator('.order-controls [data-step="-1"]').last().click();
+    const after=await page.locator('.day-layout > .card .item .tx').allTextContents();
+    assert.notDeepEqual(before,after);
+    await page.waitForTimeout(250); await page.reload();
+    assert.deepEqual(await page.locator('.day-layout > .card .item .tx').allTextContents(),after);
+    for (const view of ['week', 'month', 'stats', 'inbox', 'day']) {
       await page.locator(`#views [data-view=${view}]`).click();
       await page.waitForTimeout(400);
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `Page overflow ${width}/${view}`);
@@ -57,7 +87,7 @@ try {
       await page.locator('#exportBtn').click();
       assert.ok(Object.values(await page.evaluate(() => window.exportedBackup.records)).some(r => r.title === '앱 보존 검사'));
       assert.equal(await page.locator('#pushBtn').isEnabled(), true);
-      assert.match(await page.locator('#syncText').textContent(), /휴대폰에 저장/);
+      assert.match(await page.locator('#syncText').textContent(), /이 기기에 저장/);
     }
     await page.screenshot({ path: `.tools/screenshots/${nativeMode ? 'native-adapter' : 'web'}-${width}.png` });
     await page.locator('#themeSeg [data-theme=dark]').click();

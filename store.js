@@ -33,7 +33,7 @@ export const uid = () => Date.now().toString(36) + Math.random().toString(36).sl
 
 // 반복 일정이 해당 날짜에 나타나는지
 export function occursOn(item, date) {
-  if (item.deleted || item.kind !== 'item') return false;
+  if (item.deleted || item.kind !== 'item' || !item.date) return false;
   if (date < item.date) return false;
   if (item.until && date > item.until) return false;
   switch (item.repeat || 'none') {
@@ -56,13 +56,22 @@ export const isDone = (item, date) => (item.repeat && item.repeat !== 'none') ? 
 export function itemsOn(records, date) {
   return Object.values(records)
     .filter((r) => occursOn(r, date))
-    .sort((a, b) => (a.time || '99') .localeCompare(b.time || '99') || (a.order ?? 0) - (b.order ?? 0) || a.updatedAt - b.updatedAt);
+    .sort((a, b) => (a.dayOrder?.[date] ?? 100000) - (b.dayOrder?.[date] ?? 100000) || (a.time || '99').localeCompare(b.time || '99') || (a.order ?? 0) - (b.order ?? 0) || a.updatedAt - b.updatedAt);
+}
+
+// Existing records need no rewrite. Empty date means inbox, dayOrder is optional.
+export const inboxItems = (records) => Object.values(records).filter(r => r.kind === 'item' && !r.deleted && !r.date).sort((a,b) => b.updatedAt - a.updatedAt);
+export function reorderDay(records, date, id, direction) {
+  const list = itemsOn(records, date), from = list.findIndex(r => r.id === id), to = from + direction;
+  if (from < 0 || to < 0 || to >= list.length) return [];
+  [list[from], list[to]] = [list[to], list[from]];
+  return list.map((r, order) => ({ ...r, dayOrder: { ...r.dayOrder, [date]: order } }));
 }
 
 // 오늘 이전에 끝내지 못한 단발성 할 일
 export function overdue(records, date) {
   return Object.values(records)
-    .filter((r) => r.kind === 'item' && !r.deleted && r.type === 'task' && (r.repeat || 'none') === 'none' && !r.done && r.date < date)
+    .filter((r) => r.kind === 'item' && !r.deleted && r.type === 'task' && (r.repeat || 'none') === 'none' && !r.done && r.date && r.date < date)
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 
@@ -78,7 +87,7 @@ export function search(records, q) {
   return Object.values(records)
     
     .filter((r) => ['item', 'note', 'goal'].includes(r.kind))
-    .filter((r) => !r.deleted && ((r.title || '') + ' ' + (r.note || '') + ' ' + (r.text || '')).toLowerCase().includes(q))
+    .filter((r) => !r.deleted && ((r.title || '') + ' ' + (r.note || '') + ' ' + (r.text || '') + ' ' + JSON.stringify(r.categoryDetails || {})).toLowerCase().includes(q))
     .sort((a, b) => (b.date || b.scope || b.id).localeCompare(a.date || a.scope || a.id))
     .slice(0, 100);
 }

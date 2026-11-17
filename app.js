@@ -1,4 +1,5 @@
 import * as S from './store.js';
+import { CATEGORIES, CATEGORY_FIELDS, categoryOf } from './categories.js';
 import { createSync } from './sync.js';
 import * as ACH from './achievements.js';
 import * as X from './extras.js';
@@ -14,17 +15,18 @@ const esc = (s = '') => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<
 
 let records = load();
 let navAnim = 'fade', fxKey = null, addedId = null, barPrev = null, lastBarDate = null;
-const ui = Object.assign({ view: 'day', date: S.today(), theme: 'system' }, safeJSON(localStorage.getItem(UIKEY)) || {});
+const ui = Object.assign({ view: 'day', date: S.today(), theme: 'system', category: 'general', fontSize: 'normal' }, safeJSON(localStorage.getItem(UIKEY)) || {});
+ui.view = 'day';
 ui.date = S.today(); // 열 때는 항상 오늘부터
 
 function safeJSON(s) { try { return JSON.parse(s); } catch { return null; } }
 function load() { return safeJSON(localStorage.getItem(KEY)) || {}; }
 let saveTimer;
-function flushRecords() { clearTimeout(saveTimer); localStorage.setItem(KEY, JSON.stringify(records)); }
+function flushRecords() { clearTimeout(saveTimer); localStorage.setItem(KEY, JSON.stringify(records)); native?.updateWidget?.(records).catch(console.error); }
 function persist() { clearTimeout(saveTimer); saveTimer = setTimeout(() => { flushRecords(); native?.reschedule().catch((e) => toast('알림 예약 실패: ' + e.message)); }, 150); }
 window.addEventListener('planner-flush', flushRecords);
 window.addEventListener('pagehide', flushRecords);
-function saveUI() { localStorage.setItem(UIKEY, JSON.stringify({ view: ui.view, theme: ui.theme })); }
+function saveUI() { localStorage.setItem(UIKEY, JSON.stringify({ view: ui.view, theme: ui.theme, category: ui.category, fontSize: ui.fontSize })); }
 
 // ---------- 동기화 ----------
 let syncState = { state: 'off' };
@@ -32,7 +34,7 @@ const sync = createSync({
   onRemote(remote, first) {
     if (first) {
       // 첫 연결: 서버에 없거나 로컬이 더 최신인 항목 업로드
-      for (const r of Object.values(records)) if (!remote[r.id] || r.updatedAt > remote[r.id].updatedAt) sync.push(r);
+      for (const r of Object.values(records)) if (!remote[r.id] || S.mergeRecord(remote[r.id],r) === r) sync.push(r);
     }
     records = S.merge(records, remote); persist(); render();
   },
@@ -51,6 +53,7 @@ function remove(id) { if (records[id]) put({ ...records[id], deleted: true }); }
 const fmtMD = (s) => `${Number(s.slice(5, 7))}.${Number(s.slice(8, 10))}`;
 function labelText() {
   const d = ui.date;
+  if (ui.view === 'inbox') return '미정 보관함';
   if (ui.view === 'day') return `${Number(d.slice(5, 7))}월 ${Number(d.slice(8, 10))}일 <small>${S.dowOf(d)}요일</small>`;
   if (ui.view === 'week') { const w = S.weekOfMonth(d); const days = S.weekDays(d); return `${w.month}월 ${w.n}주 <small>${fmtMD(days[0])} – ${fmtMD(days[6])}</small>`; }
   if (ui.view === 'stats') { const days = S.weekDays(d); return `기록 <small>${fmtMD(days[0])} – ${fmtMD(days[6])} 주</small>`; }
@@ -67,7 +70,7 @@ function itemRow(it, date, compact = false, actions = false) {
   const pp = it.postponed ? `<span class="pp ${it.postponed >= 3 ? 'hot' : ''}" title="미룬 횟수">↷${it.postponed}</span>` : '';
   const acts = actions && it.type === 'task' && !done ? `<span class="acts"><button class="act" data-focus="${it.id}" title="집중 시작" aria-label="집중 시작">▶</button>${single ? `<button class="act" data-postpone="${it.id}" title="내일로 미루기" aria-label="내일로">↷</button>` : ''}</span>` : '';
   return `<li class="item ${done ? 'done' : ''} ${compact ? 'compact' : ''} ${fxc}" data-edit="${it.id}" data-date="${date}" ${single ? `data-drag="${it.id}"` : ''} style="--c:${it.color || COLORS[0]}">
-    ${mark}${it.time ? `<span class="time">${it.time}${it.end && !compact ? '–' + it.end : ''}</span>` : ''}<span class="t"><span class="tx">${esc(it.title)}</span></span>${rep}${pp}${!compact && it.note ? '<span class="has-note">✎</span>' : ''}${acts}
+    ${mark}${it.time ? `<span class="time">${it.time}${it.end && !compact ? '–' + it.end : ''}</span>` : ''}<span class="t"><span class="tx">${esc(it.title)}</span>${it.category ? `<small class="category-tag">${categoryOf(it.category).name}</small>` : ''}</span>${rep}${pp}${!compact && it.note ? '<span class="has-note">✎</span>' : ''}${acts}${actions ? `<span class="order-controls"><button data-order="${it.id}" data-step="-1" aria-label="위로 이동">↑</button><button data-order="${it.id}" data-step="1" aria-label="아래로 이동">↓</button></span>` : ''}
   </li>`;
 }
 
@@ -90,22 +93,33 @@ function goals(scope, title) {
 }
 
 // ---------- 뷰 ----------
+function inboxView() {
+  const list = S.inboxItems(records);
+  return '<section class="inbox-intro"><h2>생각나면, 일단 여기에</h2><p class="muted">날짜는 나중에 정해도 괜찮아요. 카드를 눌러 수정하거나 날짜를 정하세요.</p></section><div class="inbox-grid">' + (list.map(it => `<article class="card inbox-card" style="--c:${it.color || COLORS[0]}"><small>${categoryOf(it.category).name}</small><h3>${esc(it.title)}</h3><p>${esc(it.note || '')}</p><button data-edit="${it.id}">수정 · 날짜 정하기</button></article>`).join('') || '<p class="empty">아래 입력창에 떠오른 일을 적어보세요.</p>') + '</div>';
+}
+function renderCategories() {
+  const button = c => `<button data-category="${c.id}" aria-pressed="${ui.category === c.id}" style="--c:${c.color}">${c.name}</button>`;
+  const favorites = CATEGORIES.filter(c => ['general','exercise','reading','study',ui.category].includes(c.id));
+  $('#quickCategories').innerHTML = favorites.map(button).join('') + `<details class="all-categories"><summary>전체 카테고리</summary><div class="category-picker">${CATEGORIES.map(button).join('')}</div></details>`;
+  $('#dockInput').placeholder = categoryOf(ui.category).hint;
+}
+$('#quickCategories').onclick = e => { const b = e.target.closest('[data-category]'); if(b) { ui.category=b.dataset.category; saveUI(); renderCategories(); $('#dockInput').focus(); } };
 function dayView() {
   const d = ui.date, items = S.itemsOn(records, d);
   const od = d === S.today() ? S.overdue(records, d) : [];
   const tasks = items.filter((i) => i.type === 'task'), doneN = tasks.filter((i) => S.isDone(i, d)).length;
   return `<div class="day-layout">
     <section class="card">
-      <h3>할 일 · 일정 ${tasks.length ? `<span class="count">${doneN}/${tasks.length}</span>` : ''}<button class="chip" data-routine-open>＋ 루틴</button></h3>
+      <h3>${d === S.today() ? '오늘' : fmtMD(d)} 할 일 ${tasks.length ? `<span class="count">${doneN}/${tasks.length}</span>` : ''}<button class="chip" data-reorder>순서 변경</button><button class="chip" data-routine-open>＋ 루틴</button></h3>
       ${tasks.length ? `<div class="bar"><i data-pct="${(doneN / tasks.length) * 100}" style="width:${barPrev ?? (doneN / tasks.length) * 100}%"></i></div>` : ''}
       <ul class="list">${items.map((i) => itemRow(i, d, false, true)).join('') || '<li class="empty">비어 있어요. 아래에서 추가하거나 루틴을 넣어 보세요.</li>'}</ul>
-      ${quickAdd(d, 'qa-day')}
+      <p class="muted small">아래 입력창에서 하나씩 추가해 보세요.</p>
     </section>
     ${hintCard(d)}
     ${od.length ? `<section class="card overdue"><h3>밀린 할 일 <span class="count">${od.length}</span><button class="chip" data-carry-all>모두 오늘로</button></h3>
       <ul class="list">${od.map((i) => `<li class="item" data-edit="${i.id}" data-date="${i.date}"><button class="check" data-toggle="${i.id}" data-date="${i.date}" style="--c:${i.color || COLORS[0]}"></button><span class="time">${fmtMD(i.date)}</span><span class="t">${esc(i.title)}</span><button class="chip" data-carry="${i.id}">오늘로</button></li>`).join('')}</ul></section>` : ''}
-    ${d <= S.today() ? moodCard(d) : ''}
-    <section class="card"><h3>오늘의 메모</h3>${noteBox('d:' + d, '생각, 기록, 회고…')}</section>
+    <details class="daily-extras"><summary>하루 기록 · 컨디션과 메모</summary>${d <= S.today() ? moodCard(d) : ''}
+    <section class="card"><h3>오늘의 메모</h3>${noteBox('d:' + d, '생각, 기록, 회고…')}</section></details>
   </div>`;
 }
 
@@ -210,10 +224,12 @@ function render() {
   const a = document.activeElement, focusId = a && a.id, sel = a && 'selectionStart' in a ? [a.selectionStart, a.selectionEnd] : null;
   const typing = a && a.dataset && a.dataset.note ? a.value : null;
   $('#label').innerHTML = labelText();
-  $('#dockDate').textContent = `${ui.date === S.today() ? '오늘' : fmtMD(ui.date)}에 추가`;
+  renderCategories();
+  $('#prev').hidden = $('#next').hidden = ui.view === 'inbox';
+  $('#dockDate').textContent = ui.view === 'inbox' ? '날짜 없이 보관' : `${ui.date === S.today() ? '오늘' : fmtMD(ui.date)}에 추가`;
   document.querySelectorAll('#views button').forEach((b) => b.setAttribute('aria-selected', b.dataset.view === ui.view));
   const m = $('#main');
-  m.innerHTML = ui.view === 'day' ? dayView() : ui.view === 'week' ? weekView() : ui.view === 'stats' ? statsView() : monthView();
+  m.innerHTML = ui.view === 'inbox' ? inboxView() : ui.view === 'day' ? dayView() : ui.view === 'week' ? weekView() : ui.view === 'stats' ? statsView() : monthView();
   m.dataset.view = ui.view;
   if (navAnim) { m.classList.remove('anim-next', 'anim-prev', 'anim-fade'); void m.offsetWidth; m.classList.add('anim-' + navAnim); navAnim = null; }
   const bar = m.querySelector('.bar i[data-pct]');
@@ -231,22 +247,33 @@ function renderSync() {
   const [cls, txt] = map[s.state] || map.off;
   dot.className = 'sync-dot ' + cls; dot.title = txt;
   $('#syncText').textContent = sync.enabled ? (s.email ? `${s.email} · ${txt}` : txt) : '동기화가 아직 설정되지 않아 이 기기에만 저장됩니다. README의 "동기화 켜기"를 따라 Firebase 설정을 넣으면 폰·PC가 같은 데이터를 씁니다.';
-  if (native) $('#syncText').textContent = '현재 이 휴대폰에 저장됩니다. 폰·PC 동기화는 추후 연결합니다. 기존 웹 데이터는 JSON 백업 파일로 가져올 수 있어요.';
+  if (!sync.enabled) $('#syncText').textContent = '현재 이 기기에 저장됩니다. 동기화 서버 연결을 준비 중입니다. 연결되면 폰·PC에서 같은 이메일로 로그인해 사용할 수 있어요.';
   const btn = $('#authBtn');
   btn.hidden = false; btn.disabled = !sync.enabled;
-  btn.textContent = !sync.enabled ? '동기화 준비 중' : s.email ? '로그아웃' : 'Google로 로그인';
+  btn.textContent = !sync.enabled ? '동기화 준비 중' : s.email ? '로그아웃' : '이메일로 연결';
   $('#syncBadge').textContent = !sync.enabled ? '미연결' : s.email ? '연결됨' : '로그인 필요';
 }
 
 // ---------- 편집 시트 ----------
 const dlg = $('#editDlg'), form = $('#editForm');
+let editCategory = 'general';
+let editDetails = {};
+function renderCategoryFields() {
+  $('#categoryFields').innerHTML = `<h3>${categoryOf(editCategory).name} 기록</h3>` + CATEGORY_FIELDS[editCategory].map(([key,label]) => `<label>${label}<textarea data-detail="${key}" rows="${['content','reflection','learning','questions'].includes(key) ? 4 : 2}" placeholder="${label}">${esc(editDetails[editCategory]?.[key] || '')}</textarea></label>`).join('');
+  $('#categoryFields').hidden = !CATEGORY_FIELDS[editCategory].length;
+}
+$('#categoryFields').oninput = e => { if(e.target.dataset.detail) { editDetails[editCategory] ||= {}; editDetails[editCategory][e.target.dataset.detail] = e.target.value; } };
 let editing = null, editType = 'task', editColor = COLORS[0];
 $('#swatches').innerHTML = COLORS.map((c) => `<button type="button" data-color="${c}" style="--c:${c}" aria-label="색"></button>`).join('');
 
 function openEdit(id, preset = {}) {
-  const it = id ? records[id] : { id: null, type: 'task', date: ui.date, repeat: 'none', color: COLORS[0], ...preset };
+  const it = id ? records[id] : { id: null, type: 'task', date: ui.date, repeat: 'none', color: categoryOf(ui.category).color, category: ui.category, ...preset };
+  editCategory = it.category || 'general';
+  editDetails = structuredClone(it.categoryDetails || {});
+  renderCategoryFields();
+  form.inbox.checked = !it.date;
   editing = id; editType = it.type; editColor = it.color || COLORS[0];
-  form.title.value = it.title || ''; form.date.value = it.date; form.time.value = it.time || ''; form.end.value = it.end || '';
+  form.title.value = it.title || ''; form.date.value = it.date || ui.date; form.time.value = it.time || ''; form.end.value = it.end || '';
   form.repeat.value = it.repeat || 'none'; form.until.value = it.until || ''; form.note.value = it.note || '';
   form.remind.value = String(it.remind ?? (it.time ? 0 : -1));
   $('#delBtn').hidden = !id;
@@ -256,6 +283,10 @@ function openEdit(id, preset = {}) {
   if (!id) setTimeout(() => form.title.focus(), 50);
 }
 function syncEditUI() {
+  $('#editCategories').innerHTML = CATEGORIES.map(c => `<button type="button" data-category="${c.id}" aria-pressed="${editCategory === c.id}" style="--c:${c.color}">${c.name}</button>`).join('');
+  form.title.placeholder = categoryOf(editCategory).hint;
+  for(const k of ['date','time','end','repeat','until','remind']) form[k].disabled = form.inbox.checked;
+  form.date.required = !form.inbox.checked;
   document.querySelectorAll('#typeSeg button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.type === editType));
   document.querySelectorAll('#swatches button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.color === editColor));
   $('.until').hidden = form.repeat.value === 'none';
@@ -263,13 +294,16 @@ function syncEditUI() {
 }
 $('#typeSeg').onclick = (e) => { const b = e.target.closest('button'); if (b) { editType = b.dataset.type; syncEditUI(); } };
 $('#swatches').onclick = (e) => { const b = e.target.closest('button'); if (b) { editColor = b.dataset.color; syncEditUI(); } };
+form.inbox.onchange = syncEditUI;
+$('#editCategories').onclick = e => { const b = e.target.closest('[data-category]'); if(b) { editCategory=b.dataset.category; editColor=categoryOf(editCategory).color; renderCategoryFields(); syncEditUI(); } };
 form.repeat.onchange = syncEditUI;
 form.time.oninput = () => { if (form.time.value && form.remind.value === '-1' && !editing) form.remind.value = '0'; syncEditUI(); };
 form.onsubmit = (e) => {
   e.preventDefault();
   const title = form.title.value.trim(); if (!title) return;
   const base = editing ? records[editing] : { id: S.uid(), kind: 'item', done: false, doneDates: [] };
-  const saved = put({ ...base, title, type: editType, date: form.date.value, time: form.time.value || '', end: form.time.value ? form.end.value : '', repeat: form.repeat.value, until: form.repeat.value === 'none' ? '' : form.until.value, color: editColor, note: form.note.value.trim(), remind: form.time.value ? Number(form.remind.value) : -1 });
+  const saved = put({ ...base, title, category: editCategory, type: editType, date: form.inbox.checked ? '' : form.date.value, time: form.time.value || '', end: form.time.value ? form.end.value : '', repeat: form.repeat.value, until: form.repeat.value === 'none' ? '' : form.until.value, color: editColor, note: form.note.value.trim(), remind: form.time.value ? Number(form.remind.value) : -1 });
+  put({ ...saved, categoryDetails: editDetails, ...(form.inbox.checked ? {time: '', end: '', repeat: 'none', until: '', remind: -1} : {}) });
   if (!editing) addedId = saved.id;
   dlg.close(); render();
 };
@@ -309,25 +343,28 @@ function go(n) {
 }
 function setView(v) { navAnim = 'fade'; barPrev = null; ui.view = v; saveUI(); render(); scrollTo(0, 0); }
 $('#prev').onclick = () => go(-1); $('#next').onclick = () => go(1);
-$('#todayBtn').onclick = () => { navAnim = 'fade'; barPrev = null; ui.date = S.today(); render(); };
+$('#todayBtn').onclick = () => { ui.view = 'day'; navAnim = 'fade'; barPrev = null; ui.date = S.today(); render(); };
 $('#views').onclick = (e) => { const b = e.target.closest('button'); if (b) setView(b.dataset.view); };
-$('#fab').onclick = () => openEdit(null);
+$('#fab').onclick = () => openEdit(null, ui.view === 'inbox' ? {date: ''} : {});
 function addQuickItem(value, date) {
   const q = parseQuick(value);
-  addedId = put({ id: S.uid(), kind: 'item', ...q, date, repeat: 'none', color: q.type === 'event' ? COLORS[1] : COLORS[0], note: '', done: false, doneDates: [], order: S.itemsOn(records, date).length, remind: q.time ? 0 : -1 }).id;
+  addedId = put({ id: S.uid(), kind: 'item', ...q, date, category: ui.category, repeat: 'none', color: categoryOf(ui.category).color, note: '', done: false, doneDates: [], order: S.itemsOn(records, date).length, remind: date && q.time ? 0 : -1, ...(!date ? {time: '', end: '', type: 'task'} : {}) }).id;
 }
 $('#quickDock').onsubmit = (e) => {
   e.preventDefault();
   const input = $('#dockInput'), value = input.value.trim();
   if (!value) { input.focus(); return; }
-  addQuickItem(value, ui.date); input.value = ''; ui.view = 'day'; saveUI(); render();
-  toast(`${fmtMD(ui.date)}에 추가했어요`);
+  const inbox = ui.view === 'inbox';
+  addQuickItem(value, inbox ? '' : ui.date); input.value = ''; ui.view = inbox ? 'inbox' : 'day'; saveUI(); render();
+  toast(inbox ? '보관함에 담았어요' : `${fmtMD(ui.date)}에 추가했어요`);
 };
 
 const main = $('#main');
 main.addEventListener('click', (e) => {
   const t = e.target;
   let el;
+  if(t.closest('[data-reorder]')) { main.classList.toggle('reordering'); t.closest('button').textContent = main.classList.contains('reordering') ? '정렬 완료' : '순서 변경'; return; }
+  if ((el = t.closest('[data-order]'))) { S.reorderDay(records, ui.date, el.dataset.order, Number(el.dataset.step)).forEach(put); render(); return; }
   if ((el = t.closest('[data-toggle]'))) {
     const it = records[el.dataset.toggle], d = el.dataset.date, nu = put(S.toggleDone(it, d));
     fxKey = it.id + '@' + d; if (ui.view !== 'day' || d !== ui.date) barPrev = null;
@@ -408,14 +445,23 @@ $('#q').oninput = () => {
 };
 $('#results').onclick = (e) => {
   const li = e.target.closest('[data-res]'); if (!li) return;
-  const r = records[li.dataset.res]; ui.date = li.dataset.date;
+  const r = records[li.dataset.res]; ui.date = r.kind === 'item' && !r.date ? S.today() : li.dataset.date;
   $('#searchDlg').close();
-  if (r.kind === 'item') { setView('day'); openEdit(r.id); } else setView(r.id.startsWith('note:w') || (r.scope || '').startsWith('w') ? 'week' : r.id.startsWith('note:m') || (r.scope || '').startsWith('m') ? 'month' : 'day');
+  if (r.kind === 'item') { setView(r.date ? 'day' : 'inbox'); openEdit(r.id); } else setView(r.id.startsWith('note:w') || (r.scope || '').startsWith('w') ? 'week' : r.id.startsWith('note:m') || (r.scope || '').startsWith('m') ? 'month' : 'day');
 };
 
 // 설정
 $('#settingsBtn').onclick = () => { renderSync(); renderPush(); syncTheme(); $('#settingsDlg').showModal(); };
-$('#authBtn').onclick = async () => { try { syncState.email ? await sync.signOut() : await sync.signIn(); } catch (e) { toast('로그인 실패: ' + (e.code || e.message)); } };
+$('#achSettings').onclick = () => { $('#settingsDlg').close(); $('#meBtn').click(); };
+$('#authBtn').onclick = async () => { try { if(syncState.email) await sync.signOut(); else $('#authDlg').showModal(); } catch (e) { toast('로그인 실패: ' + (e.code || e.message)); } };
+$('#authForm').onsubmit = async e => {
+  e.preventDefault(); const f=e.target, buttons=[...f.querySelectorAll('button')]; buttons.forEach(b=>b.disabled=true);
+  $('#authMessage').textContent='연결 중…';
+  try { await sync.signIn(f.email.value.trim(), f.password.value, e.submitter?.name === 'register'); f.password.value=''; $('#authMessage').textContent=''; $('#authDlg').close(); }
+  catch(err) { $('#authMessage').textContent='연결하지 못했어요. 이메일·비밀번호와 인터넷 연결을 확인해 주세요. ('+(err.code || '오류')+')'; }
+  finally { buttons.forEach(b=>b.disabled=false); }
+};
+$('#resetPassword').onclick = async () => { const email=$('#authForm').email; if(!email.reportValidity()) return; try { await sync.resetPassword(email.value.trim()); $('#authMessage').textContent='가입된 이메일이라면 재설정 안내가 발송됩니다.'; } catch { $('#authMessage').textContent='요청하지 못했어요. 잠시 후 다시 시도해 주세요.'; } };
 function renderPush() {
   if (native) {
     $('#pushBadge').textContent = native.granted ? '휴대폰 예약' : '권한 필요';
@@ -459,7 +505,10 @@ $('#pushBtn').onclick = async () => {
 $('#pingBtn').onclick = async () => { try { await (native ? native.ping() : sync.ping()); renderPush(); toast('테스트 알림을 보냈어요 (몇 초 걸릴 수 있어요)'); } catch (e) { toast(e.message); } };
 
 $('#themeSeg').onclick = (e) => { const b = e.target.closest('button'); if (b) { ui.theme = b.dataset.theme; saveUI(); syncTheme(); } };
+$('#fontSize').onchange = e => { ui.fontSize=e.target.value; saveUI(); syncTheme(); };
 function syncTheme() {
+  document.documentElement.dataset.fontSize = ui.fontSize;
+  $('#fontSize').value = ui.fontSize;
   document.documentElement.dataset.theme = ui.theme; lastCos = ''; if (typeof renderMe === 'function' && stats) renderMe();
   document.querySelectorAll('#themeSeg button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.theme === ui.theme));
 }
@@ -768,7 +817,8 @@ navigator.serviceWorker?.addEventListener('message', (e) => { if (e.data?.type =
 window.addEventListener('planner-open', (e) => openFromUrl(e.detail));
 window.addEventListener('planner-resume', () => { timer.resumeIfRunning(); renderPush(); });
 
-records = S.compact(records); persist();
+// Retain deletion tombstones: a device can reconnect after more than 90 days.
+persist();
 syncTheme(); render(); renderSync(); sync.start();
 openFromUrl(location.href);
 timer.resumeIfRunning();

@@ -2,6 +2,7 @@
 // 저장 경로: users/{uid}/records/{recordId}  — 레코드 단위 last-write-wins (store.merge)
 import { firebaseConfig, vapidKey } from './firebase-config.js';
 import { native } from './platform.js';
+import { mergeRecord } from './store.js';
 
 const V = '10.12.5';
 const CDN = `https://www.gstatic.com/firebasejs/${V}`;
@@ -10,7 +11,7 @@ export function createSync({ onRemote, onStatus, onSettings = () => {} }) {
   let fb = null, user = null, unsub = null, unsubMeta = null;
   const pending = new Map();
   let timer = null;
-  const enabled = !!firebaseConfig && !native; // Native Google sign-in needs its own OAuth integration.
+  const enabled = !!firebaseConfig;
 
   async function load() {
     if (fb) return fb;
@@ -30,9 +31,13 @@ export function createSync({ onRemote, onStatus, onSettings = () => {} }) {
       await auth.getRedirectResult(au).catch(() => {});
       auth.onAuthStateChanged(au, (u) => {
         user = u;
+        pending.clear();
         if (unsub) { unsub(); unsub = null; }
         if (unsubMeta) { unsubMeta(); unsubMeta = null; }
         if (!u) { onStatus({ state: 'signedOut' }); return; }
+        const owner = localStorage.getItem('planner.syncOwner');
+        if(owner && owner !== u.uid) { onStatus({state:'error',email:u.email,message:'기존 데이터를 보호하려면 처음 연결한 계정으로 로그인하세요.'}); user = null; return; }
+        localStorage.setItem('planner.syncOwner', u.uid);
         onStatus({ state: 'syncing', email: u.email });
         listen();
       });
@@ -43,9 +48,10 @@ export function createSync({ onRemote, onStatus, onSettings = () => {} }) {
     const { fs, db } = fb;
     const col = fs.collection(db, 'users', user.uid, 'records');
     let first = true;
-    unsub = fs.onSnapshot(col, { includeMetadataChanges: false }, (snap) => {
+    unsub = fs.onSnapshot(col, { includeMetadataChanges: true }, (snap) => {
+      if(first && snap.metadata.fromCache) { onStatus({state:'offline', email:user.email}); return; }
       const remote = {};
-      snap.docChanges().forEach((c) => { if (c.type !== 'removed') remote[c.doc.id] = c.doc.data(); });
+      snap.docs.forEach((c) => { remote[c.id] = c.data(); });
       if (Object.keys(remote).length || first) onRemote(remote, first);
       first = false;
       onStatus({ state: snap.metadata.fromCache ? 'offline' : 'synced', email: user.email, at: Date.now() });
@@ -54,7 +60,7 @@ export function createSync({ onRemote, onStatus, onSettings = () => {} }) {
   }
 
   // ---- 푸시 알림 ----
-  const pushSupported = () => enabled && !!vapidKey && 'Notification' in self && 'serviceWorker' in navigator && 'PushManager' in self;
+  const pushSupported = () => !native && enabled && !!vapidKey && 'Notification' in self && 'serviceWorker' in navigator && 'PushManager' in self;
   async function enablePush() {
     if (!pushSupported()) throw new Error('이 브라우저/설정에서는 푸시 알림을 쓸 수 없어요');
     if (!user) throw new Error('먼저 Google로 로그인하세요');
@@ -92,22 +98,31 @@ export function createSync({ onRemote, onStatus, onSettings = () => {} }) {
   async function flush() {
     if (!user || !fb || !pending.size) return;
     const { fs, db } = fb;
-    const items = [...pending.values()]; pending.clear();
-    for (let i = 0; i < items.length; i += 400) {
-      const batch = fs.writeBatch(db);
-      items.slice(i, i + 400).forEach((r) => batch.set(fs.doc(db, 'users', user.uid, 'records', r.id), JSON.parse(JSON.stringify(r))));
-      try { await batch.commit(); } catch (e) { items.slice(i, i + 400).forEach((r) => pending.set(r.id, r)); onStatus({ state: 'error', message: e.code || String(e) }); }
+    const owner = user.uid, items = [...pending.values()]; pending.clear();
+    for (const r of items) {
+      if(user?.uid !== owner) return;
+      try {
+        await fs.runTransaction(db, async tx => {
+          const ref = fs.doc(db, 'users', owner, 'records', r.id), old = await tx.get(ref);
+          const winner = mergeRecord(old.exists() ? old.data() : null, r);
+          tx.set(ref, JSON.parse(JSON.stringify(winner)));
+        });
+      } catch(e) {
+        if(user?.uid !== owner) return;
+        pending.set(r.id, mergeRecord(r, pending.get(r.id)));
+        onStatus({state:'offline',email:user.email});
+        clearTimeout(timer); timer=setTimeout(flush,5000);
+      }
     }
   }
 
-  async function signIn() {
+  async function signIn(email, password, register = false) {
     const { auth, au } = await load();
-    const p = new auth.GoogleAuthProvider();
-    const standalone = matchMedia('(display-mode: standalone)').matches;
-    try { standalone ? await auth.signInWithRedirect(au, p) : await auth.signInWithPopup(au, p); }
-    catch (e) { if (String(e.code).includes('popup')) await auth.signInWithRedirect(au, p); else throw e; }
+    if(register) return auth.createUserWithEmailAndPassword(au,email,password);
+    return auth.signInWithEmailAndPassword(au,email,password);
   }
+  async function resetPassword(email) { const {auth,au} = await load(); return auth.sendPasswordResetEmail(au,email); }
   async function signOut() { if (fb) await fb.auth.signOut(fb.au); }
 
-  return { enabled, start, push, signIn, signOut, enablePush, saveSettings, ping, pushSupported, get user() { return user; } };
+  return { enabled, start, push, signIn, signOut, resetPassword, enablePush, saveSettings, ping, pushSupported, get user() { return user; } };
 }
