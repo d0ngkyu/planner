@@ -2,7 +2,7 @@
 
 | 항목 | 값 |
 |---|---|
-| 배포 담당 | 없음 (ANDROID-006 게시 완료, 다음 작업자 인수 기록) |
+| 배포 담당 | Codex (SOLO-CALM-007 디자인/0.1.1 게시 인수) |
 | 현재 버전 | 웹 sw `planner-v5` / Android 0.1.0 (versionCode 1) — 게시 완료, 폰 적용 미확인 |
 
 ## PLANNER-001 · 첫 버전 (2026-11-17, Claude) — 완료(로컬)
@@ -65,3 +65,18 @@
 - 서명 APK 앱 소스 df08bd8, 빌드 Actions44014961176 성공. 포함된6개 web asset 대조: Windows/Linux CRLF만 정규화한 텍스트 일치, PNG 해시 일치. 첫 Pages 확인은 GitHub 오류 페이지 반환, 배포 성공 후 재조회로 해소.
 - 설치 파일/소스 원격 보관 완료. 실제 폰 설치·알림 수신은 미확인. 다음: 사용자 폰 설치 확인 → Firebase Android 동기화 연결 → 기능/디자인 점진 개선. 새 기능을 임의로 착수하지 않음.
 - Codex 게시 잠금 해제. 후속 작업자는 TASKS/열린 PR 확인 후 소유를 기록할 것. 키 로컬 보관이며 원격 키 백업 아님(ANDROID.md). 협업 허브 PR3 등록 및 원격 요약 재조회 확인.
+
+## SOLO-CALM-007 · Codex · 진행 중 · 2026-11-17
+- 사용자 승인: Gemini가 제안한 1인용 미니멀 디자인을 Codex가 직접 적용·검증·APK 업데이트까지 수행. Gemini CLI 설치 요청이 아님.
+- 최신 결정: Gemini 협업 제외, Codex·Claude 운영. 기존 기여/이력 보존. ZIP 원본은 이 세션에 없으므로 전달된 요구사항을 기준으로 구현하며 원본 ZIP 적용이라고 주장하지 않음.
+- 기준 main099d382, 열린 PR0 확인. 브랜치 codex/solo-calm-007, 소유 styles.css/index.html/app.js의 디자인·빠른 입력·미연결 표시, 캐시/Android 버전/검증·기록. 배포 담당 Codex 인수.
+- 범위: 라이트 #FAF9F6 / 다크 #141517 / 세이지 #3B6E5C, 하단 빠른 입력, 터치44px, 눌림·체크 애니메이션, 미연결 표시. 기존 데이터 모델/기능 보존. 0.1.1 versionCode2/웹v6 예정.
+
+### SOLO-CALM-007 · 소스 검증 / 게시 준비
+- APK 소스 f3b96ff44a8d804f5935cfa1d5dc166f460998e3, PR3, 담당 Codex. 구현 후 mobile:sync 실행(전달된 명령의 CSS 적용 전 sync 순서는 수정). 웹v6/Android0.1.1 versionCode2.
+- 기존33 + 모바일12 검사 통과. Chromium 웹·네이티브 어댑터 모의 각각360/390/768/1360px: 신규 하단빠른입력(시간인식), 기존 편집/저장/재실행, 4뷰, 노출버튼44px, 페이지 가로넘침 없음, 다크 배경/동작줄이기/백업 인자 검증. JS오류0. 라이트/다크 캡처 확인. 실제 Android 실기기 검증과 구분.
+- 발견/해결: 360px 기록 잔디 터치영역 확대 후 grid 최소너비가 페이지를 확장 → 카드 min-width:0 및 잔디 내부 가로스크롤로 수정, 8개 화면조합 재검사 통과. 어두운 테마 캡처는 색 전환 완료 후 확인.
+- Actions44019274321 assembleRelease/lintRelease·테스트 성공, ZIP SHA256 5a5fe4bb2e98a565086d5695a8ac6c2119974a607912ca2eb98797d8ce3c1d21 대조. APK내6asset 소스대조(텍스트CRLF정규화/PNG해시) 일치.
+- 기존0.1.0과 같은 인증서 8197dcd546b9e42c683f51455c46e477858d9a6278fa478074a1f5cdbab4d908로 v2/v3 서명검증. APK SHA256 9b50cbf04a8f59ddc046e33b2a8e5d3670511efbfc3d3bf1219380b4af71c244. 기존 앱 삭제 없이 업데이트 경로, 실제 폰 업데이트/유지/키보드·알림 수신은 미검증.
+- 게시 대상 downloads/planner-0.1.1.apk / manifest / 설치페이지. PR3 병합 전에 이 기록 원격 재조회. 이전0.1.0 APK 보존, 앱 데이터 모델/서명키 변경 없음. Firebase 연결은 여전히 후속.
+- 협업 변경: 허브 PR5 병합53777005 확인, 원격 README 최신 결정 재조회. 이 PC AGENTS와 프로젝트 위치 기록 반영. Gemini 설치/호출/계정권한 수정 없음, 과거 기여 보존. Codex·Claude 운영.
