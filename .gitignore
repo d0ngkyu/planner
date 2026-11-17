@@ -4,5 +4,6 @@ www/
 *.jks
 *.keystore
 *.apk
+!downloads/planner-*.apk
 *.aab
 .tools/
