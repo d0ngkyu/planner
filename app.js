@@ -231,6 +231,8 @@ function render() {
   const m = $('#main');
   m.innerHTML = ui.view === 'inbox' ? inboxView() : ui.view === 'day' ? dayView() : ui.view === 'week' ? weekView() : ui.view === 'stats' ? statsView() : monthView();
   m.dataset.view = ui.view;
+  const orderButton = m.querySelector('[data-reorder]');
+  if(orderButton && m.classList.contains('reordering')) orderButton.textContent = '정렬 완료';
   if (navAnim) { m.classList.remove('anim-next', 'anim-prev', 'anim-fade'); void m.offsetWidth; m.classList.add('anim-' + navAnim); navAnim = null; }
   const bar = m.querySelector('.bar i[data-pct]');
   if (bar) { requestAnimationFrame(() => requestAnimationFrame(() => { bar.style.width = bar.dataset.pct + '%'; })); barPrev = Number(bar.dataset.pct); } else barPrev = null;
@@ -267,8 +269,8 @@ let editing = null, editType = 'task', editColor = COLORS[0];
 $('#swatches').innerHTML = COLORS.map((c) => `<button type="button" data-color="${c}" style="--c:${c}" aria-label="색"></button>`).join('');
 
 function openEdit(id, preset = {}) {
-  const it = id ? records[id] : { id: null, type: 'task', date: ui.date, repeat: 'none', color: categoryOf(ui.category).color, category: ui.category, ...preset };
-  editCategory = it.category || 'general';
+  const it = id ? records[id] : { id: null, type: 'task', date: ui.view === 'inbox' ? '' : ui.date, repeat: 'none', color: categoryOf(ui.category).color, category: ui.category, ...preset };
+  editCategory = categoryOf(it.category).id;
   editDetails = structuredClone(it.categoryDetails || {});
   renderCategoryFields();
   form.inbox.checked = !it.date;
@@ -337,11 +339,12 @@ function parseQuick(text) {
 
 // ---------- 이벤트 ----------
 function go(n) {
+  if(ui.view === 'inbox') return;
   navAnim = n > 0 ? 'next' : 'prev'; barPrev = null;
   ui.date = ui.view === 'day' ? S.addDays(ui.date, n) : ui.view === 'week' || ui.view === 'stats' ? S.addDays(ui.date, 7 * n) : S.addMonths(ui.date, n);
   render();
 }
-function setView(v) { navAnim = 'fade'; barPrev = null; ui.view = v; saveUI(); render(); scrollTo(0, 0); }
+function setView(v) { $('#main').classList.remove('reordering'); navAnim = 'fade'; barPrev = null; ui.view = v; saveUI(); render(); scrollTo(0, 0); }
 $('#prev').onclick = () => go(-1); $('#next').onclick = () => go(1);
 $('#todayBtn').onclick = () => { ui.view = 'day'; navAnim = 'fade'; barPrev = null; ui.date = S.today(); render(); };
 $('#views').onclick = (e) => { const b = e.target.closest('button'); if (b) setView(b.dataset.view); };

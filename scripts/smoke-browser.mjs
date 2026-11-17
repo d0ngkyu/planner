@@ -49,6 +49,7 @@ try {
     await page.locator('[data-edit]').filter({hasText:'수정 · 날짜 정하기'}).click();
     await page.locator('[data-detail=content]').fill('책에서 읽은 내용');
     await page.locator('[data-detail=reflection]').fill('나의 생각은 오래 남는다');
+    if(width === 390 && !nativeMode) await page.screenshot({path:'.tools/screenshots/reading-form-390.png'});
     await page.locator('#editCategories [data-category=exercise]').click();
     await page.locator('[data-detail=result]').fill('걷기 30분');
     await page.locator('#editCategories [data-category=reading]').click();
@@ -83,6 +84,9 @@ try {
     }
     await page.screenshot({ path: `.tools/screenshots/calm-${nativeMode ? 'native' : 'web'}-${width}-light.png` });
     await page.locator('#settingsBtn').click();
+    await page.locator('#fontSize').selectOption('large');
+    assert.equal(await page.evaluate(()=>getComputedStyle(document.body).fontSize),'19px');
+    await page.locator('#fontSize').selectOption('normal');
     if (nativeMode) {
       await page.locator('#exportBtn').click();
       assert.ok(Object.values(await page.evaluate(() => window.exportedBackup.records)).some(r => r.title === '앱 보존 검사'));
