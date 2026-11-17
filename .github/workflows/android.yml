@@ -27,11 +27,11 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm test
       - run: pnpm mobile:sync
-      - run: bash gradlew assembleDebug lintDebug --no-daemon
+      - run: bash gradlew assembleRelease lintRelease --no-daemon
         working-directory: android
       - uses: actions/upload-artifact@v4
         with:
-          name: planner-android-preview
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: planner-android-unsigned
+          path: android/app/build/outputs/apk/release/app-release-unsigned.apk
           if-no-files-found: error
           retention-days: 30

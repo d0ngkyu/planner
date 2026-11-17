@@ -230,6 +230,7 @@ function renderSync() {
   const [cls, txt] = map[s.state] || map.off;
   dot.className = 'sync-dot ' + cls; dot.title = txt;
   $('#syncText').textContent = sync.enabled ? (s.email ? `${s.email} · ${txt}` : txt) : '동기화가 아직 설정되지 않아 이 기기에만 저장됩니다. README의 "동기화 켜기"를 따라 Firebase 설정을 넣으면 폰·PC가 같은 데이터를 씁니다.';
+  if (native) $('#syncText').textContent = '현재 이 휴대폰에 저장됩니다. 폰·PC 동기화는 추후 연결합니다. 기존 웹 데이터는 JSON 백업 파일로 가져올 수 있어요.';
   const btn = $('#authBtn');
   btn.hidden = !sync.enabled;
   btn.textContent = s.email ? '로그아웃' : 'Google로 로그인';
