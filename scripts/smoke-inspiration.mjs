@@ -42,7 +42,7 @@ try {
   await page.locator('#inspirationHost [data-piece-save]').click();
   assert.equal(await page.locator('#nextPiece').textContent(),selected);
   assert.equal(await page.locator('#inspirationHost [data-piece-save]').getAttribute('aria-pressed'),'true');
-  await page.locator('#nextPiece').click();await page.locator('#previousPiece').click();
+  await page.locator('#advancePiece').click();await page.locator('#pieceSource').click();await page.locator('#previousPiece').click();
   assert.equal(await page.locator('#nextPiece').textContent(),selected);
   await page.waitForTimeout(250);await page.reload();
   assert.equal(await page.locator('#nextPiece').textContent(),selected);

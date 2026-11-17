@@ -37,11 +37,15 @@ export function createInspiration({getRecords,save,remove,native}) {
     }).join('')}${all.filter(r=>!MOODS[r.mood]).map(savedCard).join('')}`;
     dlg.scrollTop=scroll;
   }
+  const bookmark='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h12v16l-6-4-6 4z"/></svg>';
+  const arrow='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5"/></svg>';
   function refresh() {
     const p=current(), progress=companionProgress(getRecords()), state=nativeState||companionState(progress,visit), saved=isSaved(p.id), count=savedPieces(getRecords()).length;
     const signature=JSON.stringify([p.id,saved,count,state]);
     if(signature!==lastSignature) {
-      host.innerHTML=`<section class="piece-card" aria-label="오늘의 한 조각"><div class="piece-companion" title="${COMPANION_STATES[state]}">${companionSVG(state)}</div><div class="piece-main"><div class="piece-heading"><b>오늘의 한 조각</b><span>${MOODS[p.mood].name} · ${p.kind}</span></div><button class="piece-text" id="nextPiece" aria-label="다른 한 조각 보기">${esc(p.text)}</button><div class="piece-footer"><small>${esc(p.author)}${p.kind==='고전의 한 문장'?' · 자체 의역':''}</small><span class="piece-hint">글귀를 누르면 다음 글</span></div><div class="piece-actions"><button id="previousPiece" aria-label="이전 한 조각">↶ 이전</button><button data-piece-save="${p.id}" aria-pressed="${!!saved}">${saved?'♥ 저장됨':'♡ 저장'}</button><button id="openInspiration">영감함 ${count}</button><button id="pieceSource" aria-label="글귀 출처와 전체 내용">ⓘ</button></div></div></section>`;
+      host.innerHTML=`<section class="piece-card" aria-label="오늘의 한 조각"><div class="piece-heading">오늘의 한 조각</div><button class="piece-text" id="nextPiece" aria-label="다른 한 조각 보기">${esc(p.text)}</button><div class="piece-bottom"><button id="pieceSource" aria-label="글귀 출처와 전체 내용">${esc(p.author)}${p.kind==='고전의 한 문장'?' · 자체 의역':''}</button><div class="piece-actions"><button data-piece-save="${p.id}" aria-label="${saved?'글 저장 해제':'글 저장'}" aria-pressed="${!!saved}">${bookmark}</button><button id="advancePiece" aria-label="다음 한 조각">${arrow}</button><button id="openInspiration">영감함<span>${count||''}</span></button></div></div></section>`;
+      const preview=document.querySelector("#companionPreview");
+      if(preview) preview.innerHTML=`${companionSVG(state)}<span>${COMPANION_STATES[state]}</span>`;
       lastSignature=signature;
     }
     if(dlg.open) library();
@@ -54,11 +58,12 @@ export function createInspiration({getRecords,save,remove,native}) {
   function change(direction) { current(); sequence.cursor=(sequence.cursor||0)+direction; localStorage.setItem('planner.piece.v1',JSON.stringify(sequence)); refresh(); document.querySelector('#nextPiece').focus({preventScroll:true}); }
   host.onclick=e=>{
     const saveButton=e.target.closest('[data-piece-save]'); if(saveButton){toggle(saveButton.dataset.pieceSave);return;}
-    if(e.target.closest('#nextPiece'))change(1);
-    if(e.target.closest('#previousPiece'))change(-1);
+    if(e.target.closest('#nextPiece,#advancePiece'))change(1);
+
     if(e.target.closest('#openInspiration'))open();
-    if(e.target.closest('#pieceSource')){ const p=current();document.querySelector('#pieceDetailBody').innerHTML=`<p>${esc(p.text)}</p>${sourceLine(p)}`;document.querySelector('#pieceDetailDlg').showModal(); }
+    if(e.target.closest('#pieceSource')){ const p=current();document.querySelector('#pieceDetailBody').innerHTML=`<p>${esc(p.text)}</p>${sourceLine(p)}<button id="previousPiece" class="piece-previous">← 이전 글 보기</button>`;document.querySelector('#pieceDetailDlg').showModal(); }
   };
+  document.querySelector('#pieceDetailBody').onclick=e=>{if(e.target.closest('#previousPiece')){document.querySelector('#pieceDetailDlg').close();change(-1);}};
   body.onclick=e=>{
     const saveButton=e.target.closest('[data-piece-save]'); if(saveButton){toggle(saveButton.dataset.pieceSave);return;}
     const filter=e.target.closest('[data-mood-filter]');if(filter){activeMood=filter.dataset.moodFilter;library();}
@@ -70,7 +75,7 @@ export function createInspiration({getRecords,save,remove,native}) {
     document.querySelector('#dynamicIcon').checked=enabled;refresh();
   }
   const setting=document.querySelector('#dynamicIcon'); setting.disabled=!native?.companion;
-  document.querySelector('#dynamicIconNote').textContent=native?.companion?'방문·완료에 따라 표정이 바뀌어요. 2일 쉬면 졸고, 5일 쉬면 이불을 덮어요. 휴대폰 절전/홈 화면 앱에 따라 변경이 늦거나 기존 바로가기에 바로 반영되지 않을 수 있어요.':'캐릭터는 앱 안에서 만날 수 있어요. 홈 화면 아이콘 자동 변경은 Android 설치 앱에서 지원합니다.';
+  document.querySelector('#dynamicIconNote').textContent=native?.companion?'방문·완료에 따라 표정이 바뀌어요. 2일 쉬면 졸고, 5일 쉬면 기다리는 표정이 돼요. 휴대폰 절전/홈 화면 앱에 따라 변경이 늦거나 기존 바로가기에 바로 반영되지 않을 수 있어요.':'캐릭터는 앱 안에서 만날 수 있어요. 홈 화면 아이콘 자동 변경은 Android 설치 앱에서 지원합니다.';
   setting.onchange=async()=>{setting.disabled=true;try{const status=await native.companion({enabled:setting.checked,...companionProgress(getRecords())});enabled=status.enabled;nativeState=status.state;localStorage.setItem('planner.companion.enabled',JSON.stringify(enabled));refresh();}catch{setting.checked=enabled;document.querySelector('#dynamicIconNote').textContent='아이콘 설정을 바꾸지 못했어요. 다시 시도해 주세요.';}finally{setting.disabled=false;}};
   document.querySelector('#inspirationSettings').onclick=()=>{document.querySelector('#settingsDlg').close();open();};
   setInterval(()=>{if(!document.hidden)refresh();},60000);
