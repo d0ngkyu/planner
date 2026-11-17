@@ -1,1 +1,1 @@
-{"type":"module","private":true,"scripts":{"test":"node tests/store.test.mjs && node tests/notify.test.mjs"}}
+{"type":"module","private":true,"scripts":{"test":"node tests/store.test.mjs && node tests/notify.test.mjs && node tests/achievements.test.mjs"}}

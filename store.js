@@ -76,6 +76,8 @@ export function search(records, q) {
   q = q.trim().toLowerCase();
   if (!q) return [];
   return Object.values(records)
+    
+    .filter((r) => r.kind !== 'profile')
     .filter((r) => !r.deleted && ((r.title || '') + ' ' + (r.note || '') + ' ' + (r.text || '')).toLowerCase().includes(q))
     .sort((a, b) => (b.date || b.scope || b.id).localeCompare(a.date || a.scope || a.id))
     .slice(0, 100);
@@ -112,7 +114,7 @@ export function compact(records, now = Date.now()) {
 export function validateImport(data) {
   if (!data || typeof data !== 'object' || typeof data.records !== 'object') throw new Error('플래너 백업 파일이 아닙니다');
   for (const r of Object.values(data.records)) {
-    if (!r || typeof r.id !== 'string' || typeof r.updatedAt !== 'number' || !['item', 'note', 'goal'].includes(r.kind)) throw new Error('손상된 항목이 있습니다');
+    if (!r || typeof r.id !== 'string' || typeof r.updatedAt !== 'number' || !['item', 'note', 'goal', 'profile'].includes(r.kind)) throw new Error('손상된 항목이 있습니다');
   }
   return data.records;
 }

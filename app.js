@@ -1,5 +1,6 @@
 import * as S from './store.js';
 import { createSync } from './sync.js';
+import * as ACH from './achievements.js';
 
 const KEY = 'planner.records.v1';
 const UIKEY = 'planner.ui.v1';
@@ -8,6 +9,7 @@ const $ = (s, el = document) => el.querySelector(s);
 const esc = (s = '') => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 let records = load();
+let navAnim = 'fade', fxKey = null, addedId = null, barPrev = null, lastBarDate = null;
 const ui = Object.assign({ view: 'day', date: S.today(), theme: 'system' }, safeJSON(localStorage.getItem(UIKEY)) || {});
 ui.date = S.today(); // 열 때는 항상 오늘부터
 
@@ -53,8 +55,9 @@ function itemRow(it, date, compact = false) {
   const mark = it.type === 'task'
     ? `<button class="check ${done ? 'on' : ''}" data-toggle="${it.id}" data-date="${date}" aria-label="완료" style="--c:${it.color || COLORS[0]}"></button>`
     : `<span class="ev" style="--c:${it.color || COLORS[1]}"></span>`;
-  return `<li class="item ${done ? 'done' : ''} ${compact ? 'compact' : ''}" data-edit="${it.id}" data-date="${date}" style="--c:${it.color || COLORS[0]}">
-    ${mark}${it.time ? `<span class="time">${it.time}</span>` : ''}<span class="t">${esc(it.title)}</span>${rep}${!compact && it.note ? '<span class="has-note">✎</span>' : ''}
+  const fxc = fxKey === it.id + '@' + date ? (done ? 'just-done' : 'just-undone') : addedId === it.id ? 'pop-in' : '';
+  return `<li class="item ${done ? 'done' : ''} ${compact ? 'compact' : ''} ${fxc}" data-edit="${it.id}" data-date="${date}" style="--c:${it.color || COLORS[0]}">
+    ${mark}${it.time ? `<span class="time">${it.time}${it.end && !compact ? '–' + it.end : ''}</span>` : ''}<span class="t"><span class="tx">${esc(it.title)}</span></span>${rep}${!compact && it.note ? '<span class="has-note">✎</span>' : ''}
   </li>`;
 }
 
@@ -71,7 +74,7 @@ function goals(scope, title) {
   const list = S.goalsOf(records, scope);
   const done = list.filter((g) => g.done).length;
   return `<section class="card goals"><h3>${title}${list.length ? `<span class="count">${done}/${list.length}</span>` : ''}</h3>
-    <ul>${list.map((g) => `<li class="goal ${g.done ? 'done' : ''}"><button class="check ${g.done ? 'on' : ''}" data-goal="${g.id}" aria-label="완료"></button><span class="t" data-goal-edit="${g.id}">${esc(g.text)}</span><button class="x" data-goal-del="${g.id}" aria-label="삭제">✕</button></li>`).join('')}</ul>
+    <ul>${list.map((g) => `<li class="goal ${g.done ? 'done' : ''} ${addedId === g.id ? 'pop-in' : ''}"><button class="check ${g.done ? 'on' : ''}" data-goal="${g.id}" aria-label="완료"></button><span class="t" data-goal-edit="${g.id}">${esc(g.text)}</span><button class="x" data-goal-del="${g.id}" aria-label="삭제">✕</button></li>`).join('')}</ul>
     <form class="quick" data-goal-add="${scope}"><input id="goal-${scope}" placeholder="목표 추가" autocomplete="off"><button aria-label="추가">＋</button></form>
   </section>`;
 }
@@ -84,7 +87,7 @@ function dayView() {
   return `<div class="day-layout">
     <section class="card">
       <h3>할 일 · 일정 ${tasks.length ? `<span class="count">${doneN}/${tasks.length}</span>` : ''}</h3>
-      ${tasks.length ? `<div class="bar"><i style="width:${(doneN / tasks.length) * 100}%"></i></div>` : ''}
+      ${tasks.length ? `<div class="bar"><i data-pct="${(doneN / tasks.length) * 100}" style="width:${barPrev ?? (doneN / tasks.length) * 100}%"></i></div>` : ''}
       <ul class="list">${items.map((i) => itemRow(i, d)).join('') || '<li class="empty">비어 있어요. 아래에서 추가하세요.</li>'}</ul>
       ${quickAdd(d, 'qa-day')}
     </section>
@@ -139,8 +142,14 @@ function render() {
   const typing = a && a.dataset && a.dataset.note ? a.value : null;
   $('#label').innerHTML = labelText();
   document.querySelectorAll('#views button').forEach((b) => b.setAttribute('aria-selected', b.dataset.view === ui.view));
-  $('#main').innerHTML = ui.view === 'day' ? dayView() : ui.view === 'week' ? weekView() : monthView();
-  $('#main').dataset.view = ui.view;
+  const m = $('#main');
+  m.innerHTML = ui.view === 'day' ? dayView() : ui.view === 'week' ? weekView() : monthView();
+  m.dataset.view = ui.view;
+  if (navAnim) { m.classList.remove('anim-next', 'anim-prev', 'anim-fade'); void m.offsetWidth; m.classList.add('anim-' + navAnim); navAnim = null; }
+  const bar = m.querySelector('.bar i[data-pct]');
+  if (bar) { requestAnimationFrame(() => requestAnimationFrame(() => { bar.style.width = bar.dataset.pct + '%'; })); barPrev = Number(bar.dataset.pct); } else barPrev = null;
+  fxKey = null; addedId = null;
+  scheduleAch();
   if (focusId) { const el = document.getElementById(focusId); if (el) { if (typing !== null) el.value = typing; el.focus({ preventScroll: true }); if (sel) try { el.setSelectionRange(...sel); } catch {} } }
   document.querySelectorAll('textarea.memo').forEach(autoGrow);
 }
@@ -165,7 +174,7 @@ $('#swatches').innerHTML = COLORS.map((c) => `<button type="button" data-color="
 function openEdit(id, preset = {}) {
   const it = id ? records[id] : { id: null, type: 'task', date: ui.date, repeat: 'none', color: COLORS[0], ...preset };
   editing = id; editType = it.type; editColor = it.color || COLORS[0];
-  form.title.value = it.title || ''; form.date.value = it.date; form.time.value = it.time || '';
+  form.title.value = it.title || ''; form.date.value = it.date; form.time.value = it.time || ''; form.end.value = it.end || '';
   form.repeat.value = it.repeat || 'none'; form.until.value = it.until || ''; form.note.value = it.note || '';
   form.remind.value = String(it.remind ?? (it.time ? 0 : -1));
   $('#delBtn').hidden = !id;
@@ -176,7 +185,7 @@ function syncEditUI() {
   document.querySelectorAll('#typeSeg button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.type === editType));
   document.querySelectorAll('#swatches button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.color === editColor));
   $('.until').hidden = form.repeat.value === 'none';
-  $('.remind').hidden = !form.time.value;
+  $('.remind').hidden = !form.time.value; $('.endl').hidden = !form.time.value;
 }
 $('#typeSeg').onclick = (e) => { const b = e.target.closest('button'); if (b) { editType = b.dataset.type; syncEditUI(); } };
 $('#swatches').onclick = (e) => { const b = e.target.closest('button'); if (b) { editColor = b.dataset.color; syncEditUI(); } };
@@ -186,7 +195,8 @@ form.onsubmit = (e) => {
   e.preventDefault();
   const title = form.title.value.trim(); if (!title) return;
   const base = editing ? records[editing] : { id: S.uid(), kind: 'item', done: false, doneDates: [] };
-  put({ ...base, title, type: editType, date: form.date.value, time: form.time.value || '', repeat: form.repeat.value, until: form.repeat.value === 'none' ? '' : form.until.value, color: editColor, note: form.note.value.trim(), remind: form.time.value ? Number(form.remind.value) : -1 });
+  const saved = put({ ...base, title, type: editType, date: form.date.value, time: form.time.value || '', end: form.time.value ? form.end.value : '', repeat: form.repeat.value, until: form.repeat.value === 'none' ? '' : form.until.value, color: editColor, note: form.note.value.trim(), remind: form.time.value ? Number(form.remind.value) : -1 });
+  if (!editing) addedId = saved.id;
   dlg.close(); render();
 };
 $('#delBtn').onclick = () => {
@@ -198,23 +208,26 @@ $('#delBtn').onclick = () => {
 // 빠른 입력: "14:00 회의", "9시 운동", "오후 3시 미팅"
 function parseQuick(text) {
   let time = '', m;
-  if ((m = text.match(/^(\d{1,2}):(\d{2})\s+(.+)$/))) { time = `${S.pad(+m[1])}:${m[2]}`; text = m[3]; }
+  let end = '';
+  if ((m = text.match(/^(\d{1,2}):(\d{2})\s*[-~]\s*(\d{1,2}):(\d{2})\s+(.+)$/))) { time = `${S.pad(+m[1])}:${m[2]}`; end = `${S.pad(+m[3])}:${m[4]}`; text = m[5]; }
+  else if ((m = text.match(/^(\d{1,2}):(\d{2})\s+(.+)$/))) { time = `${S.pad(+m[1])}:${m[2]}`; text = m[3]; }
   else if ((m = text.match(/^(오전|오후)?\s*(\d{1,2})시(?:\s*(\d{1,2})분|\s*반)?\s+(.+)$/))) {
     let h = +m[2]; if (m[1] === '오후' && h < 12) h += 12; if (m[1] === '오전' && h === 12) h = 0;
     const min = m[0].includes('반') ? 30 : +(m[3] || 0);
     if (h < 24 && min < 60) { time = `${S.pad(h)}:${S.pad(min)}`; text = m[4]; }
   }
-  return { title: text.trim(), time, type: time ? 'event' : 'task' };
+  return { title: text.trim(), time, end, type: time ? 'event' : 'task' };
 }
 
 // ---------- 이벤트 ----------
 function go(n) {
+  navAnim = n > 0 ? 'next' : 'prev'; barPrev = null;
   ui.date = ui.view === 'day' ? S.addDays(ui.date, n) : ui.view === 'week' ? S.addDays(ui.date, 7 * n) : S.addMonths(ui.date, n);
   render();
 }
-function setView(v) { ui.view = v; saveUI(); render(); scrollTo(0, 0); }
+function setView(v) { navAnim = 'fade'; barPrev = null; ui.view = v; saveUI(); render(); scrollTo(0, 0); }
 $('#prev').onclick = () => go(-1); $('#next').onclick = () => go(1);
-$('#todayBtn').onclick = () => { ui.date = S.today(); render(); };
+$('#todayBtn').onclick = () => { navAnim = 'fade'; barPrev = null; ui.date = S.today(); render(); };
 $('#views').onclick = (e) => { const b = e.target.closest('button'); if (b) setView(b.dataset.view); };
 $('#fab').onclick = () => openEdit(null);
 
@@ -222,16 +235,26 @@ const main = $('#main');
 main.addEventListener('click', (e) => {
   const t = e.target;
   let el;
-  if ((el = t.closest('[data-toggle]'))) { const it = records[el.dataset.toggle]; put(S.toggleDone(it, el.dataset.date)); render(); return; }
+  if ((el = t.closest('[data-toggle]'))) {
+    const it = records[el.dataset.toggle], d = el.dataset.date, nu = put(S.toggleDone(it, d));
+    fxKey = it.id + '@' + d; if (ui.view !== 'day' || d !== ui.date) barPrev = null;
+    render();
+    if (S.isDone(nu, d)) {
+      const r = el.getBoundingClientRect(); burst(r.left + r.width / 2, r.top + r.height / 2, 14);
+      const ts = S.itemsOn(records, d).filter((i) => i.type === 'task');
+      if (ts.length >= 1 && ts.every((i) => S.isDone(i, d))) { confetti(); toast(d === S.today() ? '오늘 할 일 모두 완료! 🎉' : '그날 할 일 모두 완료!'); }
+    }
+    return;
+  }
   if ((el = t.closest('[data-carry]'))) { put({ ...records[el.dataset.carry], date: S.today() }); render(); return; }
   if (t.closest('[data-carry-all]')) { S.overdue(records, S.today()).forEach((i) => put({ ...i, date: S.today() })); render(); return; }
-  if ((el = t.closest('[data-goal]'))) { const g = records[el.dataset.goal]; put({ ...g, done: !g.done }); render(); return; }
+  if ((el = t.closest('[data-goal]'))) { const g = records[el.dataset.goal]; put({ ...g, done: !g.done }); const r = el.getBoundingClientRect(); render(); if (!g.done) burst(r.left + 10, r.top + 10, 18); return; }
   if ((el = t.closest('[data-goal-del]'))) { const g = records[el.dataset.goalDel]; remove(g.id); render(); toast('목표를 지웠어요', () => { put({ ...records[g.id], deleted: false }); render(); }); return; }
   if ((el = t.closest('[data-goal-edit]'))) { const g = records[el.dataset.goalEdit]; const v = prompt('목표 수정', g.text); if (v && v.trim()) { put({ ...g, text: v.trim() }); render(); } return; }
   if ((el = t.closest('[data-goto]'))) { ui.date = el.dataset.goto; setView('day'); return; }
   if ((el = t.closest('[data-pick]'))) {
     if (ui.date === el.dataset.pick && matchMedia('(min-width: 900px)').matches) { setView('day'); return; }
-    ui.date = el.dataset.pick; render(); return;
+    ui.date = el.dataset.pick; render(); const a = document.querySelector('.agenda'); a && (a.classList.remove('flash'), void a.offsetWidth, a.classList.add('flash')); return;
   }
   if ((el = t.closest('[data-edit]'))) { openEdit(el.dataset.edit); }
 });
@@ -243,9 +266,9 @@ main.addEventListener('submit', (e) => {
   if (f.dataset.add) {
     const q = parseQuick(v);
     const n = S.itemsOn(records, f.dataset.add).length;
-    put({ id: S.uid(), kind: 'item', ...q, date: f.dataset.add, repeat: 'none', color: q.type === 'event' ? COLORS[1] : COLORS[0], note: '', done: false, doneDates: [], order: n, remind: q.time ? 0 : -1 });
+    addedId = put({ id: S.uid(), kind: 'item', ...q, date: f.dataset.add, repeat: 'none', color: q.type === 'event' ? COLORS[1] : COLORS[0], note: '', done: false, doneDates: [], order: n, remind: q.time ? 0 : -1 }).id;
   } else if (f.dataset.goalAdd) {
-    put({ id: S.uid(), kind: 'goal', scope: f.dataset.goalAdd, text: v, done: false, order: S.goalsOf(records, f.dataset.goalAdd).length });
+    addedId = put({ id: S.uid(), kind: 'goal', scope: f.dataset.goalAdd, text: v, done: false, order: S.goalsOf(records, f.dataset.goalAdd).length }).id;
   }
   input.value = ''; render();
 });
@@ -308,7 +331,7 @@ $('#pingBtn').onclick = async () => { try { await sync.ping(); toast('테스트 
 
 $('#themeSeg').onclick = (e) => { const b = e.target.closest('button'); if (b) { ui.theme = b.dataset.theme; saveUI(); syncTheme(); } };
 function syncTheme() {
-  document.documentElement.dataset.theme = ui.theme;
+  document.documentElement.dataset.theme = ui.theme; lastCos = ''; if (typeof renderMe === 'function' && stats) renderMe();
   document.querySelectorAll('#themeSeg button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.theme === ui.theme));
 }
 $('#exportBtn').onclick = () => {
@@ -360,6 +383,108 @@ addEventListener('storage', (e) => { if (e.key === KEY) { records = S.merge(reco
 // 자정 넘김/앱 복귀 시 오늘 갱신
 let lastToday = S.today();
 document.addEventListener('visibilitychange', () => { if (!document.hidden && S.today() !== lastToday) { if (ui.date === lastToday) ui.date = S.today(); lastToday = S.today(); render(); } });
+
+// ---------- 효과 ----------
+const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+const FXC = ['#2f6f5e', '#3b6fd8', '#d0544b', '#e6a92e', '#8a5cc7', '#43b58c', '#f07aa0'];
+function burst(x, y, n = 12) {
+  if (reduce.matches) return;
+  const fx = $('#fx');
+  for (let i = 0; i < n; i++) {
+    const p = document.createElement('i'), a = (Math.PI * 2 * i) / n + Math.random() * .4, d = 24 + Math.random() * 26;
+    p.className = 'spark'; p.style.cssText = `left:${x}px;top:${y}px;--dx:${Math.cos(a) * d}px;--dy:${Math.sin(a) * d}px;background:${FXC[i % FXC.length]}`;
+    fx.appendChild(p); setTimeout(() => p.remove(), 700);
+  }
+}
+function confetti(n = 70) {
+  if (reduce.matches) return;
+  const fx = $('#fx'), w = innerWidth;
+  for (let i = 0; i < n; i++) {
+    const p = document.createElement('i');
+    p.className = 'conf'; p.style.cssText = `left:${Math.random() * w}px;--x:${(Math.random() - .5) * 160}px;--r:${(Math.random() - .5) * 900}deg;--t:${1.4 + Math.random() * 1.2}s;--dl:${Math.random() * .25}s;background:${FXC[i % FXC.length]};${Math.random() > .5 ? 'border-radius:50%;' : ''}`;
+    fx.appendChild(p); setTimeout(() => p.remove(), 3000);
+  }
+}
+
+// ---------- 업적 ----------
+const PID = 'profile';
+const profile = () => { const p = records[PID]; return p && !p.deleted ? p : { id: PID, kind: 'profile', unlocked: {}, icon: 'base', theme: 'base', equippedTitle: '새내기 플래너' }; };
+let achTimer, stats = null;
+function scheduleAch() { clearTimeout(achTimer); achTimer = setTimeout(checkAch, 250); }
+function checkAch() {
+  stats = ACH.computeStats(records, S.today());
+  const p = profile(), unlocked = { ...(p.unlocked || {}) }, fresh = [];
+  for (const a of ACH.progress(stats)) if (a.done && !unlocked[a.id]) { unlocked[a.id] = Date.now(); fresh.push(a); }
+  if (fresh.length) { put({ ...p, unlocked }); celebrate(fresh); }
+  renderMe();
+}
+function renderMe() {
+  const p = profile(), lv = stats ? ACH.level(stats) : { lv: 1, pct: 0 };
+  $('#meIcon').innerHTML = ACH.iconSVG(p.icon, 32);
+  $('#meTitle').textContent = p.equippedTitle || '새내기 플래너';
+  $('#meLv').innerHTML = `Lv.${lv.lv} <span class="xp"><i style="width:${Math.round(lv.pct * 100)}%"></i></span>`;
+  applyCosmetics(p);
+}
+let lastCos = '';
+function applyCosmetics(p) {
+  const key = p.icon + '|' + p.theme; if (key === lastCos) return; lastCos = key;
+  const th = ACH.THEMES[p.theme] || ACH.THEMES.base, dark = document.documentElement.dataset.theme === 'dark' || (document.documentElement.dataset.theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+  const root = document.documentElement.style;
+  if (p.theme && p.theme !== 'base') { root.setProperty('--accent', dark ? th.dark : th.light); root.setProperty('--today', dark ? th.dark : th.light); root.setProperty('--accent-ink', dark ? '#111' : '#fff'); }
+  else ['--accent', '--today', '--accent-ink'].forEach((v) => root.removeProperty(v));
+  $('#favicon').href = 'data:image/svg+xml,' + encodeURIComponent(ACH.iconSVG(p.icon));
+}
+function celebrate(list) {
+  const rw = (a) => [a.reward.title && `칭호 「${esc(a.reward.title)}」`, a.reward.icon && `아이콘 ${ACH.ICONS[a.reward.icon].emoji} ${ACH.ICONS[a.reward.icon].name}`, a.reward.theme && `테마 ${ACH.THEMES[a.reward.theme].name}`].filter(Boolean).join(' · ');
+  const top = list[list.length - 1], icon = top.reward.icon || 'base';
+  $('#celebBody').innerHTML = `<div class="celeb-icon">${ACH.iconSVG(icon, 88)}</div>
+    <p class="celeb-k">업적 달성${list.length > 1 ? ` ×${list.length}` : ''}</p>
+    ${list.slice(-4).map((a) => `<div class="celeb-row"><b>${esc(a.name)}</b><span>${rw(a) || '경험치 보너스'}</span></div>`).join('')}
+    ${list.length > 4 ? `<p class="muted small">외 ${list.length - 4}개</p>` : ''}
+    <p class="muted small">보상은 업적 화면에서 장착할 수 있어요.</p>`;
+  const d = $('#celebDlg'); if (!d.open) d.showModal(); confetti(90);
+  $('#meBtn').classList.add('glow'); setTimeout(() => $('#meBtn').classList.remove('glow'), 4000);
+}
+$('#celebMore').onclick = () => { $('#celebDlg').close(); openAch(); };
+let achTab = 'list';
+function openAch() { checkAchNow(); renderAch(); $('#achDlg').showModal(); }
+function checkAchNow() { clearTimeout(achTimer); checkAch(); }
+function renderAch() {
+  const p = profile(), rw = ACH.rewardsOf(p.unlocked || {}), lv = ACH.level(stats), prog = ACH.progress(stats);
+  const got = prog.filter((a) => (p.unlocked || {})[a.id]).length;
+  const stat = (k, v) => `<div class="stat"><b>${v}</b><span>${k}</span></div>`;
+  const tabs = [['list', `미션 ${got}/${prog.length}`], ['title', '칭호'], ['icon', '아이콘'], ['theme', '테마']];
+  let body = '';
+  if (achTab === 'list') {
+    const groups = [...new Set(prog.map((a) => a.group))];
+    body = groups.map((g) => `<h4>${g}</h4><ul class="ach-list">${prog.filter((a) => a.group === g).map((a) => {
+      const own = (p.unlocked || {})[a.id], r = [a.reward.title && '칭호', a.reward.icon && ACH.ICONS[a.reward.icon].emoji, a.reward.theme && '테마'].filter(Boolean).join(' ');
+      return `<li class="${own ? 'own' : ''}"><span class="medal">${own ? '🏅' : '🔒'}</span><div class="ach-main"><b>${esc(a.name)}</b><div class="mini"><i style="width:${(a.value / a.target) * 100}%"></i></div></div><span class="ach-v">${own ? '달성' : `${a.value}/${a.target}`}<small>${r}</small></span></li>`;
+    }).join('')}</ul>`).join('');
+  } else if (achTab === 'title') {
+    body = `<div class="pick-list">${rw.titles.map((tt) => `<button class="pick ${p.equippedTitle === tt ? 'on' : ''}" data-eq-title="${esc(tt)}">${esc(tt)}</button>`).join('')}</div>`;
+  } else if (achTab === 'icon') {
+    body = `<div class="pick-grid">${Object.keys(ACH.ICONS).map((k) => { const own = rw.icons.includes(k); return `<button class="pick-ic ${p.icon === k ? 'on' : ''}" ${own ? `data-eq-icon="${k}"` : 'disabled'}>${ACH.iconSVG(k, 52)}<span>${own ? ACH.ICONS[k].name : '🔒'}</span></button>`; }).join('')}</div>
+      <p class="muted small">앱 안 로고·탭 아이콘이 바뀌어요. 홈 화면 아이콘은 웹앱 제한으로 바꿀 수 없어요.</p>`;
+  } else {
+    body = `<div class="pick-grid">${Object.entries(ACH.THEMES).map(([k, th]) => { const own = rw.themes.includes(k); return `<button class="pick-th ${p.theme === k ? 'on' : ''}" ${own ? `data-eq-theme="${k}"` : 'disabled'} style="--c:${th.light}"><i></i><span>${own ? th.name : '🔒'}</span></button>`; }).join('')}</div>`;
+  }
+  $('#achBody').innerHTML = `<div class="ach-head">${ACH.iconSVG(p.icon, 56)}<div><b>${esc(p.equippedTitle || '새내기 플래너')}</b><div class="lv">Lv.${lv.lv} · ${lv.xp} XP</div><div class="xpbar"><i style="width:${Math.round(lv.pct * 100)}%"></i></div></div></div>
+    <div class="stats">${stat('완료', stats.done)}${stat('연속', stats.streak + '일')}${stat('최고 연속', stats.bestStreak + '일')}${stat('완벽한 날', stats.perfect)}${stat('일정 시간', stats.hours + 'h')}${stat('등록', stats.tasks + stats.events)}</div>
+    <nav class="seg tabs">${tabs.map(([k, n]) => `<button data-tab="${k}" aria-pressed="${achTab === k}">${n}</button>`).join('')}</nav>
+    <div class="ach-pane">${body}</div>`;
+}
+$('#achBody').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  const p = profile();
+  if (b.dataset.tab) { achTab = b.dataset.tab; renderAch(); return; }
+  if (b.dataset.eqTitle) put({ ...p, equippedTitle: b.dataset.eqTitle });
+  else if (b.dataset.eqIcon) put({ ...p, icon: b.dataset.eqIcon });
+  else if (b.dataset.eqTheme) put({ ...p, theme: b.dataset.eqTheme });
+  else return;
+  renderMe(); renderAch(); const r = b.getBoundingClientRect(); burst(r.left + r.width / 2, r.top + r.height / 2, 10);
+});
+$('#meBtn').onclick = openAch;
 
 // 알림에서 열기: ?date=YYYY-MM-DD&item=ID
 function openFromUrl(href) {

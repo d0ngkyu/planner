@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="플래너">
 <title>플래너</title>
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="icon" id="favicon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="styles.css">
@@ -28,6 +28,10 @@
       <button data-view="week" role="tab">주</button>
       <button data-view="month" role="tab">월</button>
     </nav>
+    <button class="me" id="meBtn" aria-label="업적">
+      <span class="me-icon" id="meIcon"></span>
+      <span class="me-text"><b id="meTitle"></b><small id="meLv"></small></span>
+    </button>
     <div class="tools">
       <span class="sync-dot" id="syncDot" title=""></span>
       <button class="icon" id="searchBtn" aria-label="검색">⌕</button>
@@ -48,9 +52,10 @@
       <button type="button" class="icon" data-close aria-label="닫기">✕</button>
     </div>
     <input name="title" class="title-input" placeholder="제목" autocomplete="off" required>
-    <div class="row2">
+    <div class="row3">
       <label>날짜<input type="date" name="date" required></label>
-      <label>시간<input type="time" name="time"></label>
+      <label>시작<input type="time" name="time"></label>
+      <label class="endl">끝<input type="time" name="end"></label>
     </div>
     <div class="row2">
       <label class="remind">알림
@@ -116,6 +121,17 @@
   <p class="muted small">단축키: ←/→ 이동 · T 오늘 · D/W/M 보기 · N 새 항목 · / 검색</p>
 </dialog>
 
+<dialog id="achDlg" class="sheet wide">
+  <div class="sheet-head"><h2>업적</h2><button type="button" class="icon" data-close>✕</button></div>
+  <div id="achBody"></div>
+</dialog>
+
+<dialog id="celebDlg" class="sheet celeb">
+  <div id="celebBody"></div>
+  <div class="sheet-actions"><button type="button" id="celebMore">업적 보기</button><button type="button" class="primary" data-close>좋아요</button></div>
+</dialog>
+
+<div id="fx" class="fx" aria-hidden="true"></div>
 <div id="toast" class="toast" role="status"></div>
 <script type="module" src="app.js"></script>
 </body>
