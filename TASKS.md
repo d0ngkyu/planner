@@ -2,8 +2,8 @@
 
 | 항목 | 값 |
 |---|---|
-| 배포 담당 | Codex (SOLO-CALM-007 디자인/0.1.1 게시 인수) |
-| 현재 버전 | 웹 sw `planner-v5` / Android 0.1.0 (versionCode 1) — 게시 완료, 폰 적용 미확인 |
+| 배포 담당 | 없음 (SOLO-CALM-007 게시 완료) |
+| 현재 버전 | 웹 sw `planner-v6` / Android 0.1.1 (versionCode 2) — 게시 완료, 폰 적용 미확인 |
 
 ## PLANNER-001 · 첫 버전 (2026-11-17, Claude) — 완료(로컬)
 - 요청: 모바일/PC 공동 사용 일·주·월 플래너. 사용자 결정: GitHub 새 프로젝트, 본인 혼자 기기 간 동기화.
@@ -66,7 +66,7 @@
 - 설치 파일/소스 원격 보관 완료. 실제 폰 설치·알림 수신은 미확인. 다음: 사용자 폰 설치 확인 → Firebase Android 동기화 연결 → 기능/디자인 점진 개선. 새 기능을 임의로 착수하지 않음.
 - Codex 게시 잠금 해제. 후속 작업자는 TASKS/열린 PR 확인 후 소유를 기록할 것. 키 로컬 보관이며 원격 키 백업 아님(ANDROID.md). 협업 허브 PR3 등록 및 원격 요약 재조회 확인.
 
-## SOLO-CALM-007 · Codex · 진행 중 · 2026-11-17
+## SOLO-CALM-007 · Codex · 게시 완료 · 2026-11-17
 - 사용자 승인: Gemini가 제안한 1인용 미니멀 디자인을 Codex가 직접 적용·검증·APK 업데이트까지 수행. Gemini CLI 설치 요청이 아님.
 - 최신 결정: Gemini 협업 제외, Codex·Claude 운영. 기존 기여/이력 보존. ZIP 원본은 이 세션에 없으므로 전달된 요구사항을 기준으로 구현하며 원본 ZIP 적용이라고 주장하지 않음.
 - 기준 main099d382, 열린 PR0 확인. 브랜치 codex/solo-calm-007, 소유 styles.css/index.html/app.js의 디자인·빠른 입력·미연결 표시, 캐시/Android 버전/검증·기록. 배포 담당 Codex 인수.
@@ -80,3 +80,10 @@
 - 기존0.1.0과 같은 인증서 8197dcd546b9e42c683f51455c46e477858d9a6278fa478074a1f5cdbab4d908로 v2/v3 서명검증. APK SHA256 9b50cbf04a8f59ddc046e33b2a8e5d3670511efbfc3d3bf1219380b4af71c244. 기존 앱 삭제 없이 업데이트 경로, 실제 폰 업데이트/유지/키보드·알림 수신은 미검증.
 - 게시 대상 downloads/planner-0.1.1.apk / manifest / 설치페이지. PR3 병합 전에 이 기록 원격 재조회. 이전0.1.0 APK 보존, 앱 데이터 모델/서명키 변경 없음. Firebase 연결은 여전히 후속.
 - 협업 변경: 허브 PR5 병합53777005 확인, 원격 README 최신 결정 재조회. 이 PC AGENTS와 프로젝트 위치 기록 반영. Gemini 설치/호출/계정권한 수정 없음, 과거 기여 보존. Codex·Claude 운영.
+
+
+## SOLO-CALM-007 · 게시 완료 · 2026-11-17 · Codex
+- PR3 병합 d5ce101184ec9b92b3b05a0c7c8157fc24e4045f, 웹v6/Android0.1.1 versionCode2. Pages44019817617 build/deploy/report 성공. 설치페이지0.1.1/웹quickDock HTTP200 및 공개 APK 재다운로드 SHA256 9b50cbf04a8f59ddc046e33b2a8e5d3670511efbfc3d3bf1219380b4af71c244 일치.
+- 라이트#FAF9F6/다크#141517·세이지, 하단빠른입력·44px버튼·눌림/체크·미연결표시 구현. 기존33+모바일12검사, 웹/네이티브모의 각4크기 8조합·4뷰·다크·동작줄이기 검사, JS오류0. 기록화면 넘침 수정 후 통과. 실제 APK앱소스 f3b96ff/빌드44019274321, 내부6asset 대조 및 기존인증서 v2/v3검증 성공.
+- 설치/웹 주소 https://d0ngkyu.github.io/planner/downloads/ , https://d0ngkyu.github.io/planner/ . 0.1.0 삭제 없이 새 APK 설치 안내, 실제 사용자 폰 업데이트/데이터유지/키보드/알림 수신은 미검증. Firebase 연결·다음 기능은 후속.
+- 게시 잠금 해제. Gemini 협업 종료, Codex·Claude 운영(허브PR5 53777005·이PC AGENTS 반영). Gemini 기존 기여 보존, CLI 설치/외부 계정권한 해제/상대 통지 없음.
