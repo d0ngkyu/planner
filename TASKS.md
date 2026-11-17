@@ -2,8 +2,8 @@
 
 | 항목 | 값 |
 |---|---|
-| 배포 담당 | 없음 (저장소/Pages 미생성) |
-| 현재 버전 | sw `planner-v4` (브랜치 claude/extras ← achievements ← notifications, 미배포) |
+| 배포 담당 | Claude (2026-11-17~, 다음 작업자는 이 칸 확인 후 인수 기록) |
+| 현재 버전 | sw `planner-v4` — main 반영 |
 
 ## PLANNER-001 · 첫 버전 (2026-11-17, Claude) — 완료(로컬)
 - 요청: 모바일/PC 공동 사용 일·주·월 플래너. 사용자 결정: GitHub 새 프로젝트, 본인 혼자 기기 간 동기화.
@@ -32,6 +32,11 @@
 - 새 화면 "기록"(S 단축키). 새 레코드 종류 routine/focus/mood (동기화·백업 대상). 업적 5개 추가(집중 1/10/50시간, 컨디션 7/30회) + 아이콘 2·테마 1.
 - 검증(직접): 테스트 33개(store13·notify7·achievements7·extras6). Playwright PC/폰: 루틴 추가·적용(5개), 컨디션, 미루기 3회→힌트→쪼개기(원본 삭제·2단계 생성), 타이머 시작→완료(새로고침 후 완료 처리·기록), 마우스/터치 길게누르기 드래그로 다음 날 이동, 기록 화면 렌더. 콘솔 오류 없음.
 - 미검증: 실제 Android 기기 터치감·진동·백그라운드 타이머 알림, 공유 시트.
+
+## REPO-005 · 원격 저장소 첫 반영 (2026-11-17, Claude)
+- 사용자가 빈 저장소 d0ngkyu/planner(Public) 생성. 빈 저장소이고 작업자가 Claude뿐이라 PLANNER-001~004의 일직선 커밋을 PR 없이 main에 그대로 올림(빨리감기). 작업 브랜치 claude/notifications·achievements·extras도 보존용으로 푸시. 이후 변경은 브랜치+PR 원칙.
+- 남은 사용자 작업: GitHub Pages 켜기(Settings → Pages → Deploy from a branch → main / root). 이 세션은 저장소 설정 API 권한 없음.
+- 다음: Pages 주소 확인 → Firebase 프로젝트 연결(동기화) → functions 배포(알림, PC 필요).
 
 ## 다음 후보
 - PLANNER-002: GitHub Pages 배포 + Firebase 연결 후 폰·PC 실제 동기화 확인
