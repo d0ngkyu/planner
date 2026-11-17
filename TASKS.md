@@ -2,8 +2,8 @@
 
 | 항목 | 값 |
 |---|---|
-| 배포 담당 | Codex (ANDROID-006 앱 패키징 인수, 2026-11-17) |
-| 현재 버전 | 웹 sw `planner-v5` / Android 0.1.0 (versionCode 1) — ANDROID-006 검증 후 게시 진행 |
+| 배포 담당 | 없음 (ANDROID-006 게시 완료, 다음 작업자 인수 기록) |
+| 현재 버전 | 웹 sw `planner-v5` / Android 0.1.0 (versionCode 1) — 게시 완료, 폰 적용 미확인 |
 
 ## PLANNER-001 · 첫 버전 (2026-11-17, Claude) — 완료(로컬)
 - 요청: 모바일/PC 공동 사용 일·주·월 플래너. 사용자 결정: GitHub 새 프로젝트, 본인 혼자 기기 간 동기화.
@@ -42,7 +42,7 @@
 - PLANNER-002: GitHub Pages 배포 + Firebase 연결 후 폰·PC 실제 동기화 확인
 - 구글 캘린더 가져오기, 같은 날 안에서 순서 드래그, 루틴 자동 반복 넣기
 
-## ANDROID-006 · Android 설치 앱 · Codex · 진행 중 (2026-11-17)
+## ANDROID-006 · Android 설치 앱 · Codex · 게시 완료 / 폰 확인 대기 (2026-11-17)
 - 사용자 결정: 기존 기능/디자인을 유지하는 Android 앱으로 전환, 기능·디자인 개선은 후속으로 천천히 진행.
 - 기준 main c3ac08f, 열린 PR 없음 확인. REPO-005는 설정 인계 상태이며 실행 중 배포 기록 없음. 이번 앱 패키징 담당 Codex 인수.
 - 소유: Android 프로젝트/패키징/필수 네이티브 어댑터/관련 테스트·문서. 기존 데이터 모델 유지. 브랜치 codex/android-006.
@@ -58,3 +58,10 @@
 - 남은 한계: Android 실제 설치/백그라운드 수신/재부팅/파일 선택 실기기 확인 필요. 예약은 앞으로30일 최대400건, 수정/실행 때 갱신. Android Firebase 로그인/동기화와 조건부 밤 재알림은 미연결. 웹 Google 로그인 코드 보존.
 - 게시 대상 downloads/planner-0.1.0.apk 및 설치 안내 /downloads/. APK/웹 변경은 이 작업자가 PR1 병합 후 Pages와 실제 파일 해시를 재확인. 아직 게시 완료/폰 적용으로 기록하지 않음.
 - ai-collaboration PR3 병합 9f4a732, projects/planner.md 원격 재조회 확인. 등록 누락 해결, 다른 AI 열람/동의 확인을 뜻하지 않음.
+
+
+### ANDROID-006 게시 완료 확인 · 2026-11-17 · Codex
+- PR1 main 병합 dd99e2a2d0a4f93c278c78334ee9fc7c387f4fe5. Pages Actions44015970189 성공. https://d0ngkyu.github.io/planner/downloads/ HTTP200, 공개 APK를 재다운로드해 SHA256 3d77ad348f62e6fb9a584616dc7ed12a9b856e0ae606280eddc11e688d62dd45 일치 확인.
+- 서명 APK 앱 소스 df08bd8, 빌드 Actions44014961176 성공. 포함된6개 web asset 대조: Windows/Linux CRLF만 정규화한 텍스트 일치, PNG 해시 일치. 첫 Pages 확인은 GitHub 오류 페이지 반환, 배포 성공 후 재조회로 해소.
+- 설치 파일/소스 원격 보관 완료. 실제 폰 설치·알림 수신은 미확인. 다음: 사용자 폰 설치 확인 → Firebase Android 동기화 연결 → 기능/디자인 점진 개선. 새 기능을 임의로 착수하지 않음.
+- Codex 게시 잠금 해제. 후속 작업자는 TASKS/열린 PR 확인 후 소유를 기록할 것. 키 로컬 보관이며 원격 키 백업 아님(ANDROID.md). 협업 허브 PR3 등록 및 원격 요약 재조회 확인.
