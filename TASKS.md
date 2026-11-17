@@ -2,8 +2,8 @@
 
 | 항목 | 값 |
 |---|---|
-| 배포 담당 | Codex (PLANNER-008 구현/검증 중, 게시 전) |
-| 현재 버전 | 웹 sw `planner-v6` / Android 0.1.1 (versionCode 2) — 게시 완료, 폰 적용 미확인 |
+| 배포 담당 | 없음 (PLANNER-008 기능 게시 완료, Firebase 연결 대기) |
+| 현재 버전 | 웹 sw `planner-v7` / Android 0.2.0 (versionCode 3) — 게시 완료, 폰 적용 미확인 |
 
 ## PLANNER-008 · Codex · 진행 · 2026-11-17
 - 승인 범위/순서: 폰-PC 동기화 → 날짜 없는 카드 보관함 → 같은 날 순서 변경 → Android 홈 위젯 → 직관적인 화면 재구성/글꼴·크기·카테고리별 입력·색상.
@@ -108,3 +108,11 @@
 - 담당 Codex, APK source38c6fa9d9870f55e53eb1455140e2b52c0210525, Android0.2.0(code3), 웹v7. Actions44023238076 빌드/린트/검사 전부 success. ZIP SHA256 bf8f7f11ad8de5a1dd182b3f402b9a5b5e12f0c4e55c26cd094e0d6ae3666e97 직접 대조.
 - 같은 인증서8197dcd546b9e42c683f51455c46e477858d9a6278fa478074a1f5cdbab4d908로 v2/v3 서명·검증. APK SHA256 240b1e30551c90a9e7b72d945b20fc0b519de250eea42eba58ecfc0c1dacdc46. APK 내부6asset와 로컬 소스 빌드 결과 일치(텍스트CRLF 정규화, PNG바이트).
 - PR5로 downloads/planner-0.2.0.apk/manifest/설치안내 및 소스 게시 예정. 이전APK 보존. Firebase 미연결 상태 명시, 실제 폰 설치/위젯/두기기 동기화 완료 아님. 게시 직전 원격 TASKS/PR5 head 재조회.
+
+
+### PLANNER-008 · 기능 게시 완료 / Firebase 연결 미완료 · 2026-11-17
+- PR5 main 병합00a72ab3827eaf18ea8e0334939ea002989f26fa. Pages44023824067 build/deploy/report 모두 success. 설치페이지0.2.0 및 웹categoryFields HTTP200 직접 확인, 공개 APK 재다운로드 SHA256 240b1e30551c90a9e7b72d945b20fc0b519de250eea42eba58ecfc0c1dacdc46 일치.
+- 공개 https://d0ngkyu.github.io/planner/downloads/ , APK source38c6fa9/빌드44023238076/동일키v2v3/내부6asset 대조. 기존 앱 삭제 없이 업데이트, 실제 사용자 폰 설치·데이터유지·홈 위젯 등록/크기변경·알림 수신은 미확인.
+- 완료: 18개 카테고리별 입력양식/내용검색·보존, 미정 카드→날짜이동, 날짜별 순서, Android 오늘 위젯, 오늘 중심/접기/큰글자 UI. 기존45+신규데이터/동기화모의·8화면검사 통과. 위젯은 마지막 앱 기록 기준8일/5항목, 직접체크/서버백그라운드수신 아님.
+- 미완료: Firebase 프로젝트 연결정보 없음(null). 이메일 로그인/서버충돌처리 코드는 준비했지만 Auth활성화·Firestore규칙배포·실제두기기 동기화는 진행하지 못함. 프로젝트 유무 사용자 답변 대기. 연결정보 확보 후 기존계정/프로젝트 범위 확인→설정연결→실제계정 두기기/오프라인 재접속 검증→새APK가 다음 단계. 임의 클라우드 계정/과금 생성 안 함.
+- 게시 잠금 해제. Codex·Claude 협업 유지, Gemini 신규 작업 없음. 공개/코드 검증과 폰 적용/실서버검증을 구분한다.
