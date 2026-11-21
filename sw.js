@@ -1,5 +1,5 @@
 // 오프라인용 캐시. 앱 파일 변경 시 VERSION 을 올린다.
-const VERSION = 'planner-v9';
+const VERSION = 'planner-v10';
 const FILES = ['./', 'index.html', 'styles.css', 'app.js', 'platform.js', 'store.js', 'categories.js', 'day-dial.js', 'inspiration.js', 'inspiration-ui.js', 'inspiration-content.js', 'inspiration-extra.js', 'companion.js', 'achievements.js', 'extras.js', 'drag.js', 'timer.js', 'sync.js', 'firebase-config.js', 'manifest.webmanifest', 'icon.svg', 'icon-192.png'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(VERSION).then((c) => c.addAll(FILES)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== VERSION).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });
