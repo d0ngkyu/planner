@@ -169,3 +169,9 @@
 - 공개0.4.0 APK를 재다운로드하여 SHA2562508a2aa615cfd1a952ef554c7724154e5265de7be4582acb060f4ce9a10d4e2 일치 확인. build44041079195/기존서명/내부6asset 검증은 위 기록. 검증 스크립트 첫 시도는 PowerShell 예약변수 대입으로 중단되어 작업전용변수로 수정 후 전체재실행 성공.
 - 최종범위: 360개글·시간대/탭교체·이전·저장스냅샷·6느낌12하위분류·유사추천·백업검색, 한조각 내용정렬/동일너비3버튼, 심플한 달력형 홈아이콘6표정/설정/위젯. 전체화면 재배치는 적용하지 않음.
 - 게시담당잠금 해제. 실제폰 업데이트/홈아이콘 전환/위젯/알림은 사용자기기에서 미검증, Firebase실연결도 미완료. 설치 https://d0ngkyu.github.io/planner/downloads/ ; 기존앱삭제없이업데이트. 다음은 실제사용감 확인 및 Firebase프로젝트연결정보 확보.
+
+### FIREBASE-012 동기화 켜기 · 2026-11-22 · Claude · 배포 담당 Claude
+- 기준 main de9cc4e, 열린 PR 0. codex/play-011(11-17 착수 기록만, 코드 없음)과 파일 겹침 없음.
+- 사용자 요청("너가 직접해줘")으로 Claude가 사용자 Firebase 콘솔(내장 브라우저, 기존 로그인)에서 기존 프로젝트 my-planner(my-planner-eb2d3, Spark 무료)에 설정: Authentication 이메일/비밀번호 사용, 승인 도메인 d0ngkyu.github.io 추가, Firestore (default) Standard·asia-northeast3(서울)·프로덕션 모드 생성(예약 백업 없음), 규칙에 저장소 firestore.rules 그대로 게시, 웹 앱 planner-web 등록.
+- firebase-config.js에 공개 웹 설정값 반영(비밀값 없음), sw.js VERSION planner-v10. npm test 전체 통과. vapidKey/Functions/Blaze 알림은 하지 않음.
+- 미완료: Android APK는 웹 자산을 내장하므로 폰 앱 동기화는 새 APK(서명 키 보유자 빌드) 필요. 실제 가입·기기 간 동기화 미검증.
